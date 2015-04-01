@@ -10,9 +10,9 @@ Servo servoRight;
 
 int state = 0; // 0 = forward, 1 = right turn, 2 = left turn, 3 = stop & beep, 4 = reverse
 
-const int turnProbability = 5;
+const int turnProbability = 10;
 const int rightTurnProbability = 500;
-const int stopTurnProbability = 50;
+const int stopTurnProbability = 20;
 
 const int loopFrequency = 100;
 
@@ -110,7 +110,7 @@ void loop() { // Main loop auto-repeats
       //
       //
       //  // Delay for 1 second
-      //  maneuver(speedLeft,speedRight,20);
+      maneuver(speedLeft,speedRight,20);
     }
 
       float volts(int adPin)                       // Measures volts at adPin
