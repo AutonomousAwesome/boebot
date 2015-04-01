@@ -15,6 +15,7 @@ int whiskerLeft = 1;
 int whiskerRight = 2;
 int whiskerBoth = 3;
 
+int speedLeft=0, speedRight=0;
 
 void setup()                                 // Built-in initialization block
 {
@@ -29,18 +30,18 @@ void setup()                                 // Built-in initialization block
 
 void loop()                                  // Main loop auto-repeats
 {
-  int speedLeft, speedRight;
   
    delay(10);
+  
   Serial.println(volts(A3));   
-  if(volts(A3)<0.15){
-    speedLeft=-50;
-  speedRight=-50; 
+  if(volts(A3)<0.1){
+    speedLeft=-20;
+    speedRight=-20; 
   } 
-  else if(volts(A3)>0.2)
+  else if(volts(A3)>0.30)
   {
-    speedLeft=200;
-    speedRight=200;
+    speedLeft=-20;
+    speedRight=20;
   }
   
   int collision = checkWhiskers();

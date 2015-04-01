@@ -6,14 +6,14 @@
 #include <Servo.h>                           // Include servo library
  
 Servo servoRight;                           // Declare right servo
-//Servo servoLeft;                          // Declare left servo
+Servo servoLeft;                          // Declare left servo
 
 void setup()                                 // Built-in initialization block
 {
   servoRight.attach(12);
   servoRight.writeMicroseconds(1500);        // 1.5 ms stay still signal
-  // servoLeft.attach(13);                     
-  // servoLeft.writeMicroseconds(1500);        // 1.5 ms stay still signal
+   servoLeft.attach(13);                     
+   servoLeft.writeMicroseconds(1500);        // 1.5 ms stay still signal
 }  
  
 void loop()                                  // Main loop auto-repeats
