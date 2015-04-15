@@ -34,11 +34,11 @@ void loop()                                  // Main loop auto-repeats
    delay(10);
   
   Serial.println(volts(A3));   
-  if(volts(A3)<0.1){
+  if(volts(A3)>3.0){
     speedLeft=-20;
     speedRight=-20; 
   } 
-  else if(volts(A3)>0.30)
+  else if(volts(A3)<2.0)
   {
     speedLeft=-20;
     speedRight=20;
