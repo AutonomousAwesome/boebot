@@ -14,11 +14,19 @@ int whiskerNone = 0;
 int whiskerLeft = 1;
 int whiskerRight = 2;
 int whiskerBoth = 3;
+
+int rotationConstant = 1;
+
 long startTime = 0;
 long loopPeriod = 10000;
 int speedLeft=0, speedRight=0;
 int currentState = 0;
 long lastTransitionTime = 0;
+
+int stoppingSignal = 0;
+int forwardSignal = 30;
+int backingSignal = 30;
+int turningSignal = 30;
 
 void setup()                                 // Built-in initialization block
 {
@@ -38,27 +46,45 @@ void loop()                                  // Main loop auto-repeats
    startTime = micros() + loopPeriod;
    
   if(currentState == 0){
-    speedLeft = 20;
-    speedRight = 20;
-    if(volts(A3)<0.1){
+    speedLeft = forwardSignal;
+    speedRight = forwardSignal;
+    if(volts(A3) > 3.0){
       changeState(1);
-      speedLeft=-20;
-      speedRight=-20; 
+      speedLeft=stoppingSignal;
+      speedRight=stoppingSignal; 
     }
   }
-  else if(currentState == 1){
-      speedLeft=-20;
-      speedRight=-20;
-      if(volts(A3)>0.30){
-        changeState(2);
-          speedLeft=-20;
-          speedRight=20;
+  else if(currentState == 1)//bomb signal state
+  {
+    tone(4, 3000, 500);
+    delay(500);
+    tone(4, 3500, 500);
+    delay(500);
+    tone(4, 3000, 500);
+    delay(500);
+    tone(4, 2500, 500);
+    delay(500);
+    tone(4, 3000, 500);
+    delay(500);
+    changeState(2);
+    speedLeft=-backingSignal;
+    speedRight=-backingSignal; 
+  }
+  else if(currentState == 2)// back state
+  {
+      speedLeft=-backingSignal;
+      speedRight=-backingSignal;
+      if(volts(A3) < 2.0){
+        changeState(3);
+          speedLeft=-turningSignal;
+          speedRight=turningSignal;
+          rotationConstant = 2*random(0,2)-1;
       }
   }
-  else if(currentState==2) // turning state
+  else if(currentState==3) // turning state
    {
-     speedLeft=-20;
-     speedRight=20;
+     speedLeft=-rotationConstant * turningSignal;
+     speedRight=rotationConstant * turningSignal;
      
      long turningTime = 2000000;
      if (micros() - lastTransitionTime > turningTime) {
@@ -72,8 +98,8 @@ void loop()                                  // Main loop auto-repeats
   int collision = checkWhiskers();
   if (collision > 0)
   {
-    speedLeft = 0;
-    speedRight = 0;
+    speedLeft = stoppingSignal;
+    speedRight = stoppingSignal;
     // Serial.print(collision);
   }
   
