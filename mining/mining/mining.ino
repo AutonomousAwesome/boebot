@@ -104,7 +104,7 @@ void loop()                                  // Main loop auto-repeats
   }
   
   // Delay for 1 second ><
-  maneuver(speedLeft,speedRight,20);
+  maneuver(speedLeft,speedRight);
 
   
 }
@@ -141,14 +141,8 @@ int checkWhiskers()
   }
 }
 
-void maneuver(int speedLeft, int speedRight, int msTime)
+void maneuver(int speedLeft, int speedRight)
 {
   servoLeft.writeMicroseconds(1500 + speedLeft);   // Set left servo speed
-  servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed
-  if(msTime==-1)                                   // if msTime = -1
-  {                                  
-    servoLeft.detach();                            // Stop servo signals
-    servoRight.detach();   
-  }
-  delay(msTime);                                   // Delay for msTime
+  servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed                               // Delay for msTime
 }
