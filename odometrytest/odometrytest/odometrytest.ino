@@ -15,7 +15,9 @@ float posY = 0;
 int state = 2;
 
 long startTime = 0;
-long loopPeriod = 10000; // in microseconds
+long loopPeriod_us = 10000; // in microseconds
+float loopPeriod_s = loopPeriod_us / 1000000;
+
 
 
 void setup()                                 // Built-in initialization block
@@ -30,8 +32,8 @@ void setup()                                 // Built-in initialization block
 void loop() { // Main loop auto-repeats
 
    while(startTime > micros()) ; // wait here until we get constant looptime
-   startTime = micros() + loopPeriod;
-
+   startTime = micros() + loopPeriod_us;
+//Serial.println(micros());
 Serial.println(heading);
 
 
@@ -43,13 +45,10 @@ Serial.println(heading);
       state = 3;
       tone(4, 3000, 1000);
       }
-    
-        break;
+      break;
     case 3: // stop
-        break;
+      break;
   }
-
-
       //take action
       int speedLeft = 0;
       int speedRight = 0;
@@ -71,22 +70,21 @@ Serial.println(heading);
           speedLeft = 0;
           speedRight = 0;
           break;
-      }
-
-      delay(loopPeriod); 
-      
-      odometry(speedRight, speedLeft, loopPeriod);
+      }      
+      odometry(speedRight, speedLeft, loopPeriod_us);
       maneuver(speedLeft,speedRight);
     }
     
-void odometry(int speedRight, int speedLeft, long loopPeriod){
-  heading += loopPeriod + (speedLeft - speedRight)*loopPeriod/(float)15000;
+void odometry(int speedRight, int speedLeft, long loopPeriod_us){
+  //TODO compensate for nonlinearity
+  heading += (speedRight - speedLeft)*(loopPeriod_us/(float)1000000)*(0.82);
   //if( heading < 0) heading +=360;
   //if( heading >360) heading -=360;
   
-  int speed = (speedLeft + speedRight)/2;
-  posX += cos(heading)*speed*loopPeriod/(float)1000000;
-  posY += sin(heading)*speed*loopPeriod/(float)1000000;
+  //TODO finc good constant
+  int speed = 0.1*(speedLeft + speedRight)/2;
+  posX += cos(heading*pi/180)*speed*loopPeriod_s;
+  posY += sin(heading*pi/180)*speed*loopPeriod_s;
 }
 
       void maneuver(int speedLeft, int speedRight)
