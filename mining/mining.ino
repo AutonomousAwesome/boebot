@@ -24,16 +24,16 @@
       long lastTransitionTime = 0;
       
       int stoppingSignal = 0;
-      int forwardSignal = 80;
-      int backingSignal = 80;
+      int forwardSignal = 200;
+      int backingSignal = 400;
       int turningSignal = 30;
       
       int sensorFront = 2;
       int sensorLeft = 4;
       int sensorRight = 3;
       
-      float thresholdBlack = 3.5;
-      float thresholdWhite = 2.5;      
+      float thresholdBlack = 3.8;
+      float thresholdWhite = 3.0;      
       
       void setup()                                 // Built-in initialization block
       {
@@ -139,7 +139,7 @@
           speedLeft=-rotationConstant * turningSignal;
            speedRight=rotationConstant * turningSignal;
            
-           long turningTime = 1000000;
+           long turningTime = 1500000;
            if (micros() - lastTransitionTime > turningTime) {
              changeState(0);
            }
@@ -172,7 +172,7 @@
         //check which is greatest
         if(voltLeft>maxVolt){
           maxVolt = voltLeft;
-          rotationConstant = -1;
+       //   rotationConstant = -1;
         }
         if(voltRight>maxVolt){
           maxVolt = voltRight;
@@ -180,7 +180,7 @@
         }
         if(voltFront>maxVolt){
           maxVolt = voltFront;
-          rotationConstant = 2*random(0,2)-1;;
+          //rotationConstant = 2*random(0,2)-1;;
         }
         
         if(maxVolt>threshold){
@@ -190,7 +190,55 @@
           return false;
         }
       }
-      
+      /*
+        boolean checkMineCalibrated(float threshold){
+        float voltFront = volts(sensorFront);
+        float voltLeft = volts(sensorLeft);
+        float voltRight = volts(sensorRight);
+        
+        //check which is greatest
+        if(voltLeft>maxVoltLeft){
+          maxVoltLeft = voltLeft;
+       //   rotationConstant = -1;
+        }
+        if(voltRight>maxVoltRight){
+          maxVoltRight = voltRight;
+          rotationConstant = 1;
+        }
+        if(voltFront>maxVoltFront){
+          maxVoltFront = voltFront;
+          //rotationConstant = 2*random(0,2)-1;;
+        }
+        
+        //check which is greatest
+        if(voltLeft<minVoltLeft){
+          minVoltLeft = voltLeft;
+       //   rotationConstant = -1;
+        }
+        if(voltRight<minVoltRight){
+          minVoltRight = voltRight;
+        }
+        if(voltFront<minVoltFront){
+          minVoltFront = voltFront;
+          //rotationConstant = 2*random(0,2)-1;;
+        }
+        
+        
+        if((readingLeft > threshold)||(readingRight > threshold)||(readingMiddle > threshold)){
+          return true
+        }else
+            return false
+            
+    
+        
+        if(maxVolt>threshold){
+          return true;
+        }
+        else{
+          return false;
+        }
+      }
+      */
        boolean checkClear(float threshold){
         float maxVolt = 0;
         float voltFront = volts(sensorFront);
