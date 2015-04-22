@@ -24,9 +24,16 @@
       long lastTransitionTime = 0;
       
       int stoppingSignal = 0;
-      int forwardSignal = 30;
-      int backingSignal = 30;
+      int forwardSignal = 80;
+      int backingSignal = 80;
       int turningSignal = 30;
+      
+      int sensorFront = 2;
+      int sensorLeft = 4;
+      int sensorRight = 3;
+      
+      float thresholdBlack = 3.5;
+      float thresholdWhite = 2.5;      
       
       void setup()                                 // Built-in initialization block
       {
@@ -58,7 +65,8 @@
           if(currentState == 0){
           speedLeft = forwardSignal;
           speedRight = forwardSignal;
-          if(volts(A3) > 3.0){
+         // minSensor = max(volts(A1),volts(A2),volts(A3));min
+          if(checkMine(thresholdBlack)){
             changeState(1);
             speedLeft=stoppingSignal;
             speedRight=stoppingSignal; 
@@ -66,16 +74,16 @@
         }
         else if(currentState == 1)//bomb signal state
         {
-          tone(4, 3000, 500);
-          delay(500);
-          tone(4, 3500, 500);
-          delay(500);
-          tone(4, 3000, 500);
-          delay(500);
-          tone(4, 2500, 500);
-          delay(500);
-          tone(4, 3000, 500);
-          delay(500);
+          tone(4, 3000, 200);
+          delay(200);
+          tone(4, 3500, 200);
+          delay(200);
+          tone(4, 3000, 200);
+          delay(200);
+          tone(4, 2500, 200);
+          delay(200);
+          tone(4, 3000, 200);
+          delay(200);
           changeState(2);
           speedLeft=-backingSignal;
           speedRight=-backingSignal; 
@@ -84,11 +92,11 @@
         {
             speedLeft=-backingSignal;
             speedRight=-backingSignal;
-            if(volts(A3) < 2.0){
+            if(checkClear(thresholdWhite)){
               changeState(3);
-                speedLeft=-turningSignal;
-                speedRight=turningSignal;
-                rotationConstant = 2*random(0,2)-1;
+                //rotationConstant = 2*random(0,2)-1;
+                speedLeft=-rotationConstant * turningSignal;
+                speedRight=rotationConstant * turningSignal;
             }
         }
         else if(currentState==3) // turning state
@@ -96,10 +104,15 @@
            speedLeft=-rotationConstant * turningSignal;
            speedRight=rotationConstant * turningSignal;
            
-           long turningTime = 2000000;
+           long turningTime = random(1500000,2500000);
            if (micros() - lastTransitionTime > turningTime) {
              changeState(0);
            }
+           if(checkMine(thresholdBlack)){
+            changeState(1);
+            speedLeft=stoppingSignal;
+            speedRight=stoppingSignal; 
+          }
          }
         else if(currentState ==4)
         {
@@ -131,11 +144,13 @@
              changeState(0);
            }
         }
-        
-        Serial.println(volts(A3));   
-         
-        
-        
+          
+        Serial.print("Front: ");
+        Serial.print(volts(sensorFront));
+        Serial.print("  Left:");
+        Serial.print(volts(sensorLeft));
+        Serial.print("  Right:");
+        Serial.println(volts(sensorRight));
         
         // Delay for 1 second ><
         maneuver(speedLeft,speedRight);
@@ -146,6 +161,59 @@
       void changeState(int newState){
         currentState = newState;
         lastTransitionTime = micros();
+      }
+      
+      boolean checkMine(float threshold){
+        float maxVolt = 0;
+        float voltFront = volts(sensorFront);
+        float voltLeft = volts(sensorLeft);
+        float voltRight = volts(sensorRight);
+        
+        //check which is greatest
+        if(voltLeft>maxVolt){
+          maxVolt = voltLeft;
+          rotationConstant = -1;
+        }
+        if(voltRight>maxVolt){
+          maxVolt = voltRight;
+          rotationConstant = 1;
+        }
+        if(voltFront>maxVolt){
+          maxVolt = voltFront;
+          rotationConstant = 2*random(0,2)-1;;
+        }
+        
+        if(maxVolt>threshold){
+          return true;
+        }
+        else{
+          return false;
+        }
+      }
+      
+       boolean checkClear(float threshold){
+        float maxVolt = 0;
+        float voltFront = volts(sensorFront);
+        float voltLeft = volts(sensorLeft);
+        float voltRight = volts(sensorRight);
+        
+        //check which is greatest
+        if(voltLeft>maxVolt){
+          maxVolt = voltLeft;
+        }
+        if(voltRight>maxVolt){
+          maxVolt = voltRight;
+        }
+        if(voltFront>maxVolt){
+          maxVolt = voltFront;
+        }
+        
+        if(threshold>maxVolt){
+          return true;
+        }
+        else{
+          return false;
+        }
       }
                                                    
       float volts(int adPin)                       // Measures volts at adPin
