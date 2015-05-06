@@ -119,7 +119,7 @@
           speedLeft=-backingSignal;
           speedRight=-backingSignal;
           if (collision == whiskerNone){
-            currentState = 5;
+            changeState(5);
           }
           else if(collision == whiskerLeft)
           {
