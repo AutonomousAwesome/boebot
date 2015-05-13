@@ -92,6 +92,15 @@
     }
     
     int scanForPuck(int lowSensorPin, int highSensorPin){
+      int seesPuck            
+      lowDist = 10*volts(lowSensorPin); //TODO better distance measuring
+      highDist = 10*volts(highSensorPin);
+      if((lowDist + threshold) > highDist){
+        seesPuck = 1;
+      }else{
+        seesPuck = 0;
+      }
+        
       //rotate sensor
       return noScan //scanLeft, scanRight
     }
