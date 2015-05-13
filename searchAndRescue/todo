@@ -1,0 +1,13 @@
+* collecting pucks
+	- static/actuated
+	- look for cans with a sweeper
+	- have a collector under the robot, counting how many pucks already collected
+* holding on to pucks
+* avoid walls
+	- use IR sensors instead of whiskers?
+* find and navigate to beacon
+	- two sensors mounted statically in two directions in order to find heading
+
+
+* we need:
+sharp, whiskers, puck-sensors, servos, beacon-sensors, kappa-board/cardboard.
