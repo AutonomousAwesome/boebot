@@ -1,5 +1,6 @@
-const int pingPin = 11;
-unsigned int duration, inches, cm;
+const int pingPinHigh = 8;
+const int pingPinLow = 7;
+unsigned int duration, inches, cm, cmHigh, cmLow;
 
 void setup() {
   Serial.begin(9600);
@@ -7,6 +8,18 @@ void setup() {
 }
 
 void loop() {
+  cmHigh = checkSonar(pingPinHigh);
+  cmLow = checkSonar(pingPinLow);
+  Serial.print("High: ");
+  Serial.print(cmHigh);
+  Serial.print("\t");
+  Serial.print("Low: ");
+  Serial.println(cmLow);
+  delay(200);		             // Short delay
+}
+
+
+unsigned int checkSonar(int pingPin){
   pinMode(pingPin, OUTPUT);          // Set pin to OUTPUT
   digitalWrite(pingPin, LOW);        // Ensure pin is low
   delayMicroseconds(2);
@@ -17,6 +30,5 @@ void loop() {
   duration = pulseIn(pingPin, HIGH); // Read echo pulse
   inches = duration / 74 / 2 ;        // Convert to inches
   cm = inches * 2.54;                    //Convert to centimeters
-  Serial.println(cm);            // Display result
-  delay(200);		             // Short delay
+  return cm;
 }
