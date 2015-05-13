@@ -34,9 +34,12 @@
     int foundWallDist = 0;
     
     //Scan internal variables
+    boolean seesPuck = false 
     int leftScanEdge = 0;
     int rightScanEdge = 0;
-    int scanDirection = 0; // 0 is right, 1 is left
+    boolean scanDirection = false; // true is right, false is left
+    int scanServoAngle = 0;
+    int dScanAngle = 1;
     
     const int loopFrequency = 100;
     
@@ -115,19 +118,48 @@
     * int foundWallDist, the distance to the closest found wall in cm.
     */
     void scanForPuck(int lowSensorPin, int highSensorPin){
-      int seesPuck            
+      //foundPuck
+      boolean sawPuck = seesPuck;   
       lowDist = 10*volts(lowSensorPin); //TODO better distance measuring
       highDist = 10*volts(highSensorPin);
-      if((lowDist + threshold) > highDist){
-        seesPuck = 1;
-      }else{
-        seesPuck = 0;
+      int threshold = 5;
+      
+      if(lowDist > (highDist + threshold)){ // do we see a puck?
+        seesPuck = true;
       }
+      
+      if(!foundPuck){
+        if(seesPuck){//just found the puck(for the "first time")
+          leftScanEdge = scanServoAngle;
+          rightScanEdge = scanServoAngle;
+          foundPuck= true;
+          if(abs(scanServoAngle) >= scanRange){
+           changeScanDirection(); 
+          scanServoAngle += dScanAngle;
+        }else{
+          scanServoAngle += dScanAngle;
+        }
+      }
+      if(seesPuck && !sawPuck){ 
+
+      }
+      
+      if(!seesPuck && foundPuck)
         
       //rotate sensor
       return noScan //scanLeft, scanRight
     }
     
+    //helper function for scanForPuck
+    void changeScanDirection(){
+      if(foundPuck && !seesPuck){
+        foundPuck = !foundPuck; //we have reached the edge of the scan and lost track of the puck
+      }
+      
+      scanDirection= !scanDirection;
+      dScanAngle= -dScanAngle;
+    }
+      
     float volts(int adPin)                       // Measures volts at adPin
     { // Returns floating point voltage
       return float(analogRead(adPin)) * 5.0 / 1024.0;
