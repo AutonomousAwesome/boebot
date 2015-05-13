@@ -14,15 +14,29 @@
     //const int rightTurnProbability = 500;
     //const int stopTurnProbability = 20;
     
+    //Pins
     const int sonarSensor = 9;
-    const int sharpSensorLow = 4;
-    const int sharpSensorHigh = 5;
+    const int sharpSensorLow = 4; // is 0
+    const int sharpSensorHigh = 5; // is 1
     const int beaconSensor = 7;
     
     const int noScan = 0;
     const int scanLeft = 1;
     const int scanRight = 2;
     int puckScanResults = 0;
+    
+    //Scan outputs
+    boolean foundPuck = false;
+    int foundPuckDist = 0;
+    int foundPuckAngle = 0;
+    boolean foundWall = false;
+    int foundWallAngle = 0;
+    int foundWallDist = 0;
+    
+    //Scan internal variables
+    int leftScanEdge = 0;
+    int rightScanEdge = 0;
+    int scanDirection = 0; // 0 is right, 1 is left
     
     const int loopFrequency = 100;
     
@@ -91,7 +105,16 @@
       drive(speedLeft,speedRight);
     }
     
-    int scanForPuck(int lowSensorPin, int highSensorPin){
+    /* Will scan for pucks and walls. 
+    * this function is communicating it's result by setting some global variables:
+    * boolean foundPuck, high = is found
+    * int foundPuckDist, the distance to the Puck in cm
+    * int foundPuckAngle, the angle in degree where the puck is, from -90 to + 90 deg.
+    * boolean foundWall, if we see any wall.
+    * int foundWallAngle, the angle to the closest found wall, from -90 to + 90 deg.
+    * int foundWallDist, the distance to the closest found wall in cm.
+    */
+    void scanForPuck(int lowSensorPin, int highSensorPin){
       int seesPuck            
       lowDist = 10*volts(lowSensorPin); //TODO better distance measuring
       highDist = 10*volts(highSensorPin);
