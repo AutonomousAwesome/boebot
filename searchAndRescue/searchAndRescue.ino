@@ -118,16 +118,14 @@
     * int foundWallDist, the distance to the closest found wall in cm.
     */
     void scanForPuck(int lowSensorPin, int highSensorPin){
-      //foundPuck
       boolean sawPuck = seesPuck;   
-      lowDist = 10*volts(lowSensorPin); //TODO better distance measuring
-      highDist = 10*volts(highSensorPin);
+      int lowDist = checkSonar(lowSensorPin);  //10*volts(lowSensorPin); //TODO better distance measuring
+      int highDist = checkSonar(highSensorPin);  //10*volts(highSensorPin);
       int threshold = 5;
       
       if(lowDist > (highDist + threshold)){ // do we see a puck?
         seesPuck = true;
       }
-      
       if(!foundPuck){
         if(seesPuck){//just found the puck(for the "first time")
           leftScanEdge = scanServoAngle;
@@ -169,3 +167,17 @@
       servoLeft.writeMicroseconds(1500 + speedLeft);   // Set left servo speed
       servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed
     }
+
+unsigned int checkSonar(int pingPin){
+  pinMode(pingPin, OUTPUT);          // Set pin to OUTPUT
+  digitalWrite(pingPin, LOW);        // Ensure pin is low
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);       // Start ranging
+  delayMicroseconds(5);              //   with 5 microsecond burst
+  digitalWrite(pingPin, LOW);        // End ranging
+  pinMode(pingPin, INPUT);           // Set pin to INPUT
+  duration = pulseIn(pingPin, HIGH); // Read echo pulse
+  inches = duration / 74 / 2 ;        // Convert to inches
+  cm = inches * 2.54;                    //Convert to centimeters
+  return cm;
+}
