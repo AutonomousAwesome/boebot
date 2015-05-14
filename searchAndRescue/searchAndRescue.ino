@@ -65,13 +65,27 @@ void loop() { // Main loop auto-repeats
                 changeState(1);
             }
             break;
-        case 1: // approach puck
 
+        case 1: // approach puck TODO: puck lost
+            if (foundPuck()){
+                pucks = pucks + 1;
+                if (pucks == 0){
+                    changeState(0):
+                }
+                else {
+                    changeState(2):
+                }
+            }
             break;
+
         case 2: // find beacon
 
             break;
+
         case 3: // approach beacon
+            break;
+
+        case 4: // dump pucks
             break;
     }
 
@@ -190,3 +204,5 @@ void changeState(int newState){
     state = newState;
     lastTransitionTime = micros();
 }
+
+    
