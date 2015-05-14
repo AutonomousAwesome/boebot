@@ -42,8 +42,10 @@ boolean scanDirection = false; // true is right, false is left
 int scanServoAngle = 0;
 int dScanAngle = 1;
 
-const int loopFrequency = 100;
 long lastTransitionTime = 0;
+
+      long startTime = 0;
+      long loopPeriod = 10000; // period in micro seconds
 
 void setup()                                 // Built-in initialization block
 {
@@ -55,6 +57,9 @@ void setup()                                 // Built-in initialization block
 }
 
 void loop() { // Main loop auto-repeats
+
+  while(startTime > micros()) ; // wait here until we get constant looptime
+  startTime = micros() + loopPeriod;
 
     //make decision(s)
     switch (state) {
@@ -79,6 +84,8 @@ void loop() { // Main loop auto-repeats
             break;
 
         case 2: // find beacon
+        
+        
 
             break;
 
@@ -109,7 +116,6 @@ void loop() { // Main loop auto-repeats
             break;
     }
 
-    delay(1000/loopFrequency); 
     //  if(volts(A3)<0.2){
     //    speedLeft=0;
     //  speedRight=0;
