@@ -1,4 +1,4 @@
-const int pingPinHigh = 8;
+const int pingPinHigh = 6;
 const int pingPinLow = 7;
 unsigned int duration, inches, cm, cmHigh, cmLow;
 
@@ -9,6 +9,7 @@ void setup() {
 
 void loop() {
   cmHigh = checkSonar(pingPinHigh);
+  delay(100);
   cmLow = checkSonar(pingPinLow);
   Serial.print("High: ");
   Serial.print(cmHigh);
