@@ -10,36 +10,91 @@ const int sonarReadDelay = 5; // ms
 
 const unsigned long puckRange = 40; // cm
 const unsigned long puckThreshold = 10; // cm
-const int puckSideToCenterAngleEstimate = 4; // degrees
+const int puckSideToCenterAngleEstimate = 10; // degrees
 
 const int scanAngleOffset = 8;
 const int scanAngleLimit = 60; // degrees
-const int scanAngleCenter = 15;
+const int scanAngleCenter = 10;
 int scanAngle = 0; // degrees
-int scanAngleDelta = 5; // degrees
+int scanAngleDelta = 2; // degrees
 
 bool sawThisSweep = false;
+bool sweepJustOver = false;
 bool foundPuck = false;
 int foundPuckAngle = 0;
-int foundPuckStraightAheadTime = 0;
 
 void setup() {
   Serial.begin(9600);
   tone(2, 3000, 500);
   servoScanner.attach(11);
-  //servoLeft.attach(13);
-  //servoRight.attach(12);
+  servoLeft.attach(13);
+  servoRight.attach(12);
 }
 
+int state = 0;
+unsigned long time = 0;
+
 void loop() {
-  sweep();
   
   int speedLeft = 0;
   int speedRight = 0;
-  //servoLeft.writeMicroseconds(1500 - speedLeft);
-  //servoRight.writeMicroseconds(1500 + speedRight);
+  
+  time++;
+  
+  if (state == 0) {
+    sweep();
+    
+    if (sweepJustOver) {
+      if (foundPuck) {
+        Serial.print("Found angle: ");
+        Serial.println(foundPuckAngle);
+        if (abs(foundPuckAngle) < scanAngleCenter) {
+          state = 2;
+          time = 0;
+        } else {
+          state = 1;
+          time = 0;
+        }
+      } else {
+        state = 2;
+        time = 0;
+      }
+    }
+  }
+  else if (state == 1) {
+    // Rotate
+    if (foundPuckAngle > 0) {
+      // Rotate right
+      speedLeft = 30;
+      speedRight = -30;
+    }
+    else {
+      // Rotate left
+      speedLeft = -30;
+      speedRight = 30;
+    }
+    
+    if (time > 20) {
+      state = 0;
+      time = 0;
+    }
+  }
+  else if (state == 2) {
+    // Go forward
+    speedLeft = 30;
+    speedRight = 30;
+    
+    if (time > 200) {
+      state = 0;
+      time = 0;
+    }
+  }
+    
+  servoLeft.writeMicroseconds(1500 - speedLeft);
+  servoRight.writeMicroseconds(1500 + speedRight);
   
   //Serial.print("\n");
+  delay(10);
 }
 
 // Moves the scan servo and sweeps to find the puck. Only finds puck when
@@ -52,18 +107,11 @@ void sweep() {
   
   if (!sawThisSweep) {
     if (seesPuck) {
-      foundPuckAngle = scanAngle;
-      
-      if (scanAngleDelta > 0) {
-        // Sweeping to the right
-        foundPuckAngle += puckSideToCenterAngleEstimate;
-      } else {
-        // Sweeping to the left
-        foundPuckAngle -= puckSideToCenterAngleEstimate;
-      }
+      // Sweeping to the right
+      foundPuckAngle = scanAngle + puckSideToCenterAngleEstimate;
       
       sawThisSweep = true;
-      //tone(2, 3000, 100);
+      tone(2, 3000, 100);
     }
   }
   
@@ -71,21 +119,15 @@ void sweep() {
   scanAngle += scanAngleDelta;
   
   // Reached end of angle limit?
+  sweepJustOver = false;
+  
   if (abs(scanAngle) > scanAngleLimit) {
     // Sweep ended
     foundPuck = sawThisSweep;
     
     // Sweeping right?
     if (scanAngleDelta > 0) {
-      // Count how many sweeps to the right the found puck has been straight ahead
-      if (foundPuck) {
-        if (abs(foundPuckAngle) < scanAngleCenter) {
-          foundPuckStraightAheadTime++;
-          tone(2, 3000, 100);      
-        } else {
-          foundPuckStraightAheadTime = 0;
-        }
-      }
+      sweepJustOver = true;
     }
     
     // Sweeping left?
@@ -94,7 +136,6 @@ void sweep() {
       sawThisSweep = false;
       foundPuck = false;
       foundPuckAngle = 0;
-      foundPuckStraightAheadTime = 0;
     }
     
     // Switch scan direction
@@ -123,10 +164,10 @@ unsigned long checkSonar(int pingPin) {
   unsigned long inches = duration / 148;
   unsigned long cm = inches * 2.54;
   
-  Serial.print(pingPin);
-  Serial.print(" cm: ");
-  Serial.print(cm);
-  Serial.print("\t");
+  //Serial.print(pingPin);
+  //Serial.print(" cm: ");
+  //Serial.print(cm);
+  //Serial.print("\t");
   
   // Make sure that we reset the pin before leaving the function
   pinMode(pingPin, OUTPUT);
