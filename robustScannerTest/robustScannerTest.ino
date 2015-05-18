@@ -6,7 +6,7 @@ Servo servoRight;
 
 const int pingPinHigh = 6;
 const int pingPinLow = 7;
-const int sonarReadDelay = 5; // ms
+const int sonarReadDelay = 15; // ms
 
 const unsigned long puckRange = 40; // cm
 const unsigned long puckThreshold = 10; // cm
@@ -16,7 +16,7 @@ const int scanAngleOffset = 8;
 const int scanAngleLimit = 60; // degrees
 const int scanAngleCenter = 10;
 int scanAngle = 0; // degrees
-int scanAngleDelta = 2; // degrees
+int scanAngleDelta = 4; // degrees
 
 bool sawThisSweep = false;
 bool sweepJustOver = false;
