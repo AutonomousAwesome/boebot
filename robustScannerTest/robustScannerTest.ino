@@ -46,7 +46,7 @@ void loop() {
     
     if (sweepJustOver) {
       if (foundPuck) {
-        Serial.print("Found angle: ");
+        Serial.print("Found puck at angle: ");
         Serial.println(foundPuckAngle);
         if (abs(foundPuckAngle) < scanAngleCenter) {
           state = 2;
@@ -128,6 +128,7 @@ void sweep() {
     // Sweeping right?
     if (scanAngleDelta > 0) {
       sweepJustOver = true;
+      scanAngle = 0;
     }
     
     // Sweeping left?
