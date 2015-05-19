@@ -171,7 +171,7 @@ void loop() {
     else if (puckState == 1) { // Wander
       wander();
       
-      if (puckTimeSinceStateChange > 6000000) {
+      if (puckTimeSinceStateChange > wanderingTime) {
         changePuckState(0);
       }
     }
@@ -286,9 +286,7 @@ void loop() {
         break;
         case 2:
         //Wandering state
-        //TODO: some wandering
-        speedLeft = 0;//-turningSignal;
-        speedRight = 0;//turningSignal;
+        wander();
         
         if (micros() - lastTransitionTime > wanderingTime) {
           changeBeaconState(0);      
