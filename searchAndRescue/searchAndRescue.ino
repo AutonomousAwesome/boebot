@@ -46,12 +46,13 @@ int beaconState = 0;
 int sensorLeft = A5;
 int sensorRight = A3;
 
-float thresholdBlack = 3.0;//3.8;
-float thresholdWhite = 2.0;//3.0; 
+float thresholdBlack = 3.0; //3.8;
+float thresholdWhite = 2.0; //3.0; 
 //-------------------------------------
 
 //---------- Puck finding -----------
 int puckState = 0;
+int foundNoPuckCount = 0;
 unsigned long puckStateTransitionTime = 0;
 unsigned long puckTimeSinceStateChange = 0;
 
@@ -85,6 +86,14 @@ bool foundPuck = false;
 int foundPuckAngle = 0; // degrees
 unsigned long foundPuckDistance = 0; // cm
 //-----------------------------------
+
+//---------- Wandering -----------
+int wanderState = 0; // 0 = forward, 1 = right turn, 2 = left turn
+long wanderStateFinishedTime = 0;
+const long wanderMaxTurnTime = 1000000;
+const int rightTurnProbability = 500;
+const long wanderMaxForwardTime = 5000000;
+//--------------------------------
 
 void setup() {
   Serial.begin(9600);
@@ -124,12 +133,14 @@ void loop() {
       
       if (sweepJustOver) {
         if (foundPuck) {
+          foundNoPuckCount = 0;
+          
           Serial.print("Found puck at angle: ");
           Serial.println(foundPuckAngle);
           
           // Puck straight ahead?
           if (abs(foundPuckAngle) < sweepAngleCenter) {
-            if (foundPuckDistance < 20) {
+            if (foundPuckDistance <= 20) {
               // Eat puck!
               changePuckState(4);
             } else {
@@ -137,7 +148,7 @@ void loop() {
               changePuckState(3);
             }
           } else {
-            if (foundPuckDistance <= 8) {
+            if (foundPuckDistance <= 10) {
               // Eat puck!
               changePuckState(4);
             } else {
@@ -146,16 +157,21 @@ void loop() {
             }
           }
         } else {
-          // Found no puck, wander
-          changePuckState(1);
+          // Found no puck
+          foundNoPuckCount++;
+          
+          if (foundNoPuckCount <= 2) {
+            changePuckState(3); // Nudge forward
+          } else {
+            changePuckState(1); // Wander
+          }
         }
       }
     }
     else if (puckState == 1) { // Wander
-      speedLeft = 0;
-      speedRight = 0;
+      wander();
       
-      if (puckTimeSinceStateChange > 2000000) {
+      if (puckTimeSinceStateChange > wanderingTime) {
         changePuckState(0);
       }
     }
@@ -189,6 +205,7 @@ void loop() {
       speedRight = 30;
       
       if (puckTimeSinceStateChange > 3000000) {
+        tone(2, 2000, 1000);
         pucks++;
         
         if (pucks < 2) {
@@ -197,7 +214,6 @@ void loop() {
           // Find beacon
           changePuckState(0);
           changeState(2);
-          changeBeaconState(0);
         }
       }
     }
@@ -206,6 +222,7 @@ void loop() {
     case 1: // ---
     break;
     case 2: // find beacon
+    loopPeriod = 1000;
     
     if(checkSafeZone(thresholdBlack)){
       changeState(3);
@@ -226,7 +243,7 @@ void loop() {
         beaconSeenIr2 = beaconSeenIr2 || (ir2==0);
         beaconSeenIr3 = beaconSeenIr3 || (ir3==0);
         
-        if (micros() - lastBeaconTransitionTime > listeningTime) {
+        if (micros() - lastTransitionTime > listeningTime) {
           changeBeaconState(1);      
         }
         break;
@@ -269,11 +286,9 @@ void loop() {
         break;
         case 2:
         //Wandering state
-        //TODO: some wandering
-        speedLeft = 0;//-turningSignal;
-        speedRight = 0;//turningSignal;
+        wander();
         
-        if (micros() - lastBeaconTransitionTime > wanderingTime) {
+        if (micros() - lastTransitionTime > wanderingTime) {
           changeBeaconState(0);      
         }
         break;
@@ -282,7 +297,7 @@ void loop() {
         speedLeft = -turningSignal;
         speedRight = turningSignal;
         
-        if (micros() - lastBeaconTransitionTime > turnAroundTime) {
+        if (micros() - lastTransitionTime > turnAroundTime) {
           changeBeaconState(0);      
         }
         break;
@@ -306,12 +321,10 @@ void loop() {
     speedLeft = -forwardSignal;
     speedRight = -forwardSignal;
     break;
-    
     case 5: //Turn around
     speedLeft = -turningSignal;
     speedRight = turningSignal;
     if (micros() - lastTransitionTime > turnAroundTime) {
-      pucks = 0;
       changeBeaconState(0);      
     }
     break;
@@ -489,3 +502,49 @@ void sweepForPuck() {
   delay(sonarReadDelay);
 }
 // -----------------------------------------------
+
+// ---------- Wandering functions -------------
+//will set speed left and speed right, and set the wander state
+void wander() {
+  switch (wanderState) {
+    case 0: // forward
+      speedLeft = 200;
+      speedRight = 200;
+      if(micros() > wanderStateFinishedTime){//change wanderState to turning?
+        wanderStateFinishedTime = micros() + random(wanderMaxTurnTime);
+        if(random(1000) < rightTurnProbability){
+          wanderState = 1;
+          speedLeft = 100;
+          speedRight = -100;
+        }else{
+          wanderState = 2;
+          speedLeft = -100;
+          speedRight = 100;
+        }
+      }
+      break;
+    case 1: // right turn
+      speedLeft = 100;
+      speedRight = -100;
+      //stop turning?
+      if(micros() > wanderStateFinishedTime){
+        wanderStateFinishedTime = micros() + random(wanderMaxForwardTime);
+        wanderState = 0;
+        speedLeft = 200;
+        speedRight = 200;
+      }
+      break;
+    case 2: // left turn
+      speedLeft = -100;
+      speedRight = 100;
+      //stop turning?
+      if(micros() > wanderStateFinishedTime){
+        wanderStateFinishedTime = micros() + random(wanderMaxForwardTime);
+        wanderState = 0;
+        speedLeft = 200;
+        speedRight = 200;
+      }
+      break;
+  }
+}
+// --------------------------------------------
