@@ -1,43 +1,20 @@
-/*
- * Robotics with the BOE Shield - PhototransistorVoltage
- * Display voltage of phototransistor circuit output connected to A3 in
- * the serial monitor.
- */
 #include <Servo.h>
 
+Servo servoSweeper;
 Servo servoLeft;
 Servo servoRight;
 
 int state = 0; // 0 = search for puck, 1 = aproach puck, 2 = find beacon, 3 = aproach beacon, 4 = dump pucks
 int pucks = 0; // count of pucks in the hold
 
-
-//Pins
-const int sonarSensorHigh = 9;
-const int sonarSensorLow = 8;
-
-//Scan outputs
-boolean foundPuck = false;
-int foundPuckDist = 0;
-int foundPuckAngle = 0;
-boolean foundWall = false;
-int foundWallAngle = 0;
-int foundWallDist = 0;
-
-//Scan internal variables
-boolean seesPuck = false;
-int leftScanEdge = 0;
-int rightScanEdge = 0;
-boolean scanDirection = false; // true is right, false is left
-int scanServoAngle = 0;
-int dScanAngle = 1;
-
-long lastTransitionTime = 0;
-
+// Timing
 long startTime = 0;
+long lastTransitionTime = 0;
 long loopPeriod = 1000; // period in micro seconds
 
-
+// Pins
+const int sonarSensorHigh = 9;
+const int sonarSensorLow = 8;
 
 //----------Variables for beacon finding-----------
 
@@ -57,7 +34,7 @@ boolean beaconSeenIr1 = false;
 boolean beaconSeenIr2 = false;
 boolean beaconSeenIr3 = false;
       
-//take action
+// Take action
 int speedLeft = 0;
 int speedRight = 0;
 
@@ -74,187 +51,139 @@ float thresholdBlack = 3.8;
 float thresholdWhite = 3.0; 
 
 //-------------------------------------------------
-
-void setup()                                 // Built-in initialization block
-{
-    Serial.begin(9600);                 // Set data rate to 9600 bps
-    tone(4, 3000, 1000);
-    delay(1000);
-    servoLeft.attach(13);
-    servoRight.attach(12);
+void setup() {
+  Serial.begin(9600);
+  tone(2, 3000, 1000);
+  delay(1000);
+  servoSweeper.attach(11);
+  servoLeft.attach(13);
+  servoRight.attach(12);
 }
 
-void loop() { // Main loop auto-repeats
-
+void loop() {
   while(startTime > micros()) ; // wait here until we get constant looptime
   startTime = micros() + loopPeriod;
-
-    //make decision(s)
-    switch (state) {
-        case 0: // search for pucks
-            //puckScanResults = scanForPuck(sharpSensorLow, sharpSensorHigh); //scanForPuck returns no, left or right
-            //if(puckScanResults > noScan){
-                //found something, switch state
-            //    changeState(1);
-            //}
-            break;
-
-        case 1: // approach puck TODO: puck lost
-            //if (foundPuck()){
-            //   pucks = pucks + 1;
-            //    if (pucks == 0){
-            //        changeState(0):
-            //    }
-            //    else {
-            //        changeState(2):
-            //    }
-            //}
-            break;
-
-        case 2: // find beacon
-          if(checkSafeZone(thresholdBlack)){
-            changeState(3);
-            changeBeaconState(0);
-            speedLeft=stoppingSignal;
-            speedRight=stoppingSignal; 
-          }
-          else{
-            // substates
-            switch(beaconState) {
-      
-              case 0:
-              //Listening state
+  
+  // Make decision(s)
+  switch (state) {
+    case 0: // search for pucks
+    break;
+    case 1:
+    break;
+    case 2: // find beacon
+    if(checkSafeZone(thresholdBlack)){
+      changeState(3);
+      changeBeaconState(0);
+      speedLeft=stoppingSignal;
+      speedRight=stoppingSignal; 
+    } else {
+      // substates
+      switch(beaconState) {
         
-                ir1 = digitalRead(irReceiverPinLeft);
-                ir2 = digitalRead(irReceiverPinRight);
-                ir3 = digitalRead(irReceiverPinBack);
-                
-                beaconSeenIr1 = beaconSeenIr1 || (ir1==0);
-                beaconSeenIr2 = beaconSeenIr2 || (ir2==0);
-                beaconSeenIr3 = beaconSeenIr3 || (ir3==0);
-                
-                if (micros() - lastTransitionTime > listeningTime) {
-                  changeBeaconState(1);      
-                }
-             break;
-             case 1:
-             // check sensors
-               if(!beaconSeenIr1 && !beaconSeenIr2 && !beaconSeenIr3){
-                 //Didn't see anything, go to wandering state
-                 changeBeaconState(2);
-               }
-               else if(!beaconSeenIr1 && !beaconSeenIr2){
-                 //Saw something back, turn around
-                 beaconSeenIr3==false;
-                 changeBeaconState(3);
-               }
-               else{
-                 //Saw something front, left or right
-                 
-                 if(beaconSeenIr1 && beaconSeenIr2){
-                 //Saw something front, drive straight ahead
-                 speedLeft = forwardSignal;
-                 speedRight = forwardSignal;
-                 }
-                 else if(beaconSeenIr1){
-                 //Saw something left but not right, turn left
-                 speedLeft = -turningSignal;
-                 speedRight = turningSignal;
-                 }
-                 else if(beaconSeenIr2){
-                 //Saw something right but not left, turn right
-                 speedLeft = turningSignal;
-                 speedRight = -turningSignal;
-                 }
-                 
-                 //reset beaconSeen
-                 beaconSeenIr1 = false;
-                 beaconSeenIr2 = false;
-                 beaconSeenIr3 = false;
-                 
-                 changeBeaconState(0);
-               }
-             break;
-             case 2:
-             //Wandering state
-               //TODO: some wandering
-               speedLeft = 0;//-turningSignal;
-               speedRight = 0;//turningSignal;
-               if (micros() - lastTransitionTime > wanderingTime) {
-                    changeBeaconState(0);      
-               }
-             
-             break;
-             case 3:
-             //Turnaround state
-               speedLeft = -turningSignal;
-               speedRight = turningSignal;
-               if (micros() - lastTransitionTime > turnAroundTime) {
-                  changeBeaconState(0);      
-               }
-             break;
-          }
+        case 0:
+        //Listening state        
+        ir1 = digitalRead(irReceiverPinLeft);
+        ir2 = digitalRead(irReceiverPinRight);
+        ir3 = digitalRead(irReceiverPinBack);
+        
+        beaconSeenIr1 = beaconSeenIr1 || (ir1==0);
+        beaconSeenIr2 = beaconSeenIr2 || (ir2==0);
+        beaconSeenIr3 = beaconSeenIr3 || (ir3==0);
+        
+        if (micros() - lastTransitionTime > listeningTime) {
+          changeBeaconState(1);      
         }
         break;
-
-        case 3: // drive into the safe zone
-          if (micros() - lastTransitionTime > driveToSafeZoneTime) {
-            changeBeaconState(4);      
+        case 1:
+        // check sensors
+        if(!beaconSeenIr1 && !beaconSeenIr2 && !beaconSeenIr3){
+          //Didn't see anything, go to wandering state
+          changeBeaconState(2);
+        }
+        else if(!beaconSeenIr1 && !beaconSeenIr2){
+          //Saw something back, turn around
+          beaconSeenIr3==false;
+          changeBeaconState(3);
+        }
+        else {
+          //Saw something front, left or right
+          if(beaconSeenIr1 && beaconSeenIr2){
+            //Saw something front, drive straight ahead
+            speedLeft = forwardSignal;
+            speedRight = forwardSignal;
           }
-          speedLeft = forwardSignal;
-          speedRight = forwardSignal;
-        break;
-
-        case 4: // dump pucks
-          if(checkClear(thresholdWhite)){
-            changeState(5);
-            speedLeft=stoppingSignal;
-            speedRight=stoppingSignal; 
+          else if(beaconSeenIr1){
+            //Saw something left but not right, turn left
+            speedLeft = -turningSignal;
+            speedRight = turningSignal;
           }
-          speedLeft = -forwardSignal;
-          speedRight = -forwardSignal;
+          else if(beaconSeenIr2){
+            //Saw something right but not left, turn right
+            speedLeft = turningSignal;
+            speedRight = -turningSignal;
+          }
+          
+          //reset beaconSeen
+          beaconSeenIr1 = false;
+          beaconSeenIr2 = false;
+          beaconSeenIr3 = false;
+          
+          changeBeaconState(0);
+        }
         break;
-            
-         case 5: //Turn around
-           speedLeft = -turningSignal;
-           speedRight = turningSignal;
-           if (micros() - lastTransitionTime > turnAroundTime) {
-             changeBeaconState(0);      
-           }
-         break;
+        case 2:
+        //Wandering state
+        //TODO: some wandering
+        speedLeft = 0;//-turningSignal;
+        speedRight = 0;//turningSignal;
+        
+        if (micros() - lastTransitionTime > wanderingTime) {
+          changeBeaconState(0);      
+        }
+        break;
+        case 3:
+        //Turnaround state
+        speedLeft = -turningSignal;
+        speedRight = turningSignal;
+        
+        if (micros() - lastTransitionTime > turnAroundTime) {
+          changeBeaconState(0);      
+        }
+        break;
+      }
     }
-
-
-    //take action
-    //int speedLeft = 0;
-    //int speedRight = 0;
-
-    switch (state) {
-        case 0: // search for pucks
-            //turn randomly and drive a bit
-            break;
-        case 1: // approach puck TODO: puck lost
-
-            break;
-        case 2: // find beacon
-
-            break;
-        case 3: // drive into the safe zone
-
-            break;
-        case 4: // dump pucks
-         
-            break;
-            
-         case 5: //Turn around
-         
-         break;
+    break;
+    case 3: // drive into the safe zone
+    if (micros() - lastTransitionTime > driveToSafeZoneTime) {
+      changeBeaconState(4);      
     }
-    drive(speedLeft,speedRight);
+    
+    speedLeft = forwardSignal;
+    speedRight = forwardSignal;
+    break;
+    case 4: // dump pucks
+    if(checkClear(thresholdWhite)){
+      changeState(5);
+      speedLeft=stoppingSignal;
+      speedRight=stoppingSignal; 
+    }
+    speedLeft = -forwardSignal;
+    speedRight = -forwardSignal;
+    break;
+    case 5: //Turn around
+    speedLeft = -turningSignal;
+    speedRight = turningSignal;
+    if (micros() - lastTransitionTime > turnAroundTime) {
+      changeBeaconState(0);      
+    }
+    break;
+  }
+  
+  // Drive the robot!
+  drive(speedLeft,speedRight);
 }
 
-float volts(int adPin)                       // Measures volts at adPin
-{ // Returns floating point voltage
+float volts(int adPin) { // Returns floating point voltage
     return float(analogRead(adPin)) * 5.0 / 1024.0;
 }
 
@@ -268,7 +197,6 @@ void changeState(int newState){
     lastTransitionTime = micros();
 }
 
-
 //---- Beacon functions ------
 void changeBeaconState(int newState){
     beaconState = newState;
@@ -278,7 +206,7 @@ void changeBeaconState(int newState){
 boolean checkSafeZone(float threshold){
   float voltLeft = volts(sensorLeft);
   float voltRight = volts(sensorRight);
-          
+  
   if(voltRight>threshold && voltLeft>threshold){
     return true;
   }
@@ -291,7 +219,7 @@ boolean checkClear(float threshold){
   float maxVolt = 0;
   float voltLeft = volts(sensorLeft);
   float voltRight = volts(sensorRight);
-          
+  
   //check which is greatest
   if(voltLeft>maxVolt){
     maxVolt = voltLeft;
