@@ -8,13 +8,22 @@
 Servo servoLeft;
 Servo servoRight;
 
-const int beaconright = 4;
+//beacon
+const int beaconright = 9;
 const int beaconleft = 5;
 const int beaconrear = 3;
 
+boolean seesBeacon = false;
+signed int beaconAngle = 0;
+
+
+//odometry
+float heading = 0;
+float posX = 0;
+float posY = 0;
 
 long startTime = 0;
-long loopPeriod = 10000; // period in micro seconds
+long loopPeriod = 1000; // period in micro seconds
 
 void setup()                                 // Built-in initialization block
 {
@@ -33,34 +42,22 @@ void loop() { // Main loop auto-repeats
   int speedLeft = 0;
   int speedRight = 0;
 
-  int beaconDir = beaconScan();
-  Serial.print("beacon: ");
-  Serial.println(beaconDir);
-
-  if (beaconDir = 1){//forward
-    tone(4, 3000, 1000);
-  }else if(beaconDir = 2){//right
-    tone(4, 3000, 1000);
-  }else if(beaconDir = 3){//left
-    tone(4, 3000, 1000);
-  }else{ // not seen  
-    //derp   
-  }      
-
-
-    //take action
-
-    drive(speedLeft,speedRight);
+  beaconScan();
+  if(seesBeacon){
+    Serial.println(beaconAngle);
+  }
+  odometry(speedRight, speedLeft, loopPeriod);
+  drive(speedLeft,speedRight);
 }
 //returns if the beacon is seen and the relative angle in which the beacon is, 0 is forward, positive is left
 void beaconScan(){
-  int bRight = digitalRead(beaconright);
-  int bLeft = digitalRead(beaconleft);
-  int bRear = digitalRead(beaconrear); 
+  boolean bRight = !digitalRead(beaconright);
+  boolean bLeft = !digitalRead(beaconleft);
+  boolean bRear = !digitalRead(beaconrear); 
   if(!bRight && !bLeft && !bRear){ // sees nothing
     seesBeacon = false;
     beaconAngle = 0;
-    return  
+    return;  
   }else if (bRight && !bLeft && !bRear){ // only right
     seesBeacon = true;
     beaconAngle = -120;
@@ -85,6 +82,7 @@ void beaconScan(){
     seesBeacon = true;
     beaconAngle = 150;
     return ;
+  }
 }
 
 void drive(int speedLeft, int speedRight){
@@ -92,4 +90,15 @@ void drive(int speedLeft, int speedRight){
     servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed
 }
 
+void odometry(int speedRight, int speedLeft, long loopPeriod_us){
+  //TODO compensate for nonlinearity
+  heading += (speedRight - speedLeft)*(loopPeriod_us/(float)1000000)*(0.82);
+  //if( heading < 0) heading +=360;
+  //if( heading >360) heading -=360;
+  
+  //TODO finc good constant
+  int speed = 0.1*(speedLeft + speedRight)/2;
+  posX += cos(heading*3.14/180)*speed*loopPeriod_us;
+  posY += sin(heading*3.14/180)*speed*loopPeriod_us;
+}
     

@@ -44,8 +44,8 @@ int dScanAngle = 1;
 
 long lastTransitionTime = 0;
 
-      long startTime = 0;
-      long loopPeriod = 10000; // period in micro seconds
+long startTime = 0;
+long loopPeriod = 10000; // period in micro seconds
 
 void setup()                                 // Built-in initialization block
 {
