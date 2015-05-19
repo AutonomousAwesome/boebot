@@ -10,9 +10,12 @@ Servo servoRight;
 
 int wanderState = 0; // 0 = forward, 1 = right turn, 2 = left turn
 
-const int turnProbability = 10;
+const int turnProbability = 5;
 const int rightTurnProbability = 500;
-const int stopTurnProbability = 20;
+const int stopTurnProbability = 40;
+
+int speedLeft = 0;
+int speedRight = 0;
 
 long startTime = 0;
 long loopPeriod = 10000; // period in micro seconds
@@ -29,57 +32,51 @@ void setup()                                 // Built-in initialization block
 void loop() { // Main loop auto-repeats
   while(startTime > micros()) ; // wait here until we get constant looptime
   startTime = micros() + loopPeriod;
-  
-  //make decision(s)
+  wander(); 
+  drive(speedLeft,speedRight);
+}
+
+//will set speed left and speed right, and set the wander state
+void wander(){
   switch (wanderState) {
     case 0: // forward
-      //change wanderState to turning?
-      if(random(1000) < turnProbability){
+      speedLeft = 200;
+      speedRight = 200;
+      if(random(1000) < turnProbability){//change wanderState to turning?
         if(random(1000) < rightTurnProbability){
           wanderState = 1;
+          speedLeft = 100;
+          speedRight = -100;
         }else{
           wanderState = 2;
+          speedLeft = -100;
+          speedRight = 100;
         }
       }
       break;
     case 1: // right turn
-      
+      speedLeft = 100;
+      speedRight = -100;
       //stop turning?
       if(random(1000) < stopTurnProbability){
         wanderState = 0;
+        speedLeft = 200;
+        speedRight = 200;
       }
       break;
     case 2: // left turn
+      speedLeft = -100;
+      speedRight = 100;
       //stop turning?
       if(random(1000) < stopTurnProbability){
         wanderState = 0;
+        speedLeft = 200;
+        speedRight = 200;
       }
-        break;
-    case 3: // stop & beep
-        break;
+      break;
   }
-
-
-  //take action
-  int speedLeft = 0;
-  int speedRight = 0;
-      switch (wanderState) {
-        case 0: // forward
-          speedLeft = 200;
-          speedRight = 200;
-          break;
-        case 1: // right turn
-          speedLeft = 100;
-          speedRight = -100;
-          break;
-        case 2: // left turn
-          speedLeft = -100;
-          speedRight = 100;
-          break;
-      }
-
-      drive(speedLeft,speedRight);
 }
+
 
 void drive(int speedLeft, int speedRight){
     servoLeft.writeMicroseconds(1500 - speedLeft);   // Set left servo speed
