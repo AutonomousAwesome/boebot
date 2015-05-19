@@ -291,7 +291,7 @@ void loop() {
     break;
     case 3: // drive into the safe zone
     if (micros() - lastTransitionTime > driveToSafeZoneTime) {
-      changeBeaconState(4);      
+      changeState(4);      
     }
     
     speedLeft = forwardSignal;
