@@ -20,9 +20,9 @@
       int backingSignal = 400;
       int turningSignal = 30;
       
-      int sensorFront = 2;
-      int sensorLeft = 4;
-      int sensorRight = 3;
+      int sensorFront = A2;
+      int sensorLeft = A5;
+      int sensorRight = A3;
       
       float thresholdBlack = 3.8;
       float thresholdWhite = 3.0;      
