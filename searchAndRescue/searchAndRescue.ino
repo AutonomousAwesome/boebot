@@ -46,8 +46,8 @@ int beaconState = 0;
 int sensorLeft = A5;
 int sensorRight = A3;
 
-float thresholdBlack = 3.8;
-float thresholdWhite = 3.0; 
+float thresholdBlack = 3.0;//3.8;
+float thresholdWhite = 2.0;//3.0; 
 //-------------------------------------
 
 //---------- Puck finding -----------
@@ -197,6 +197,7 @@ void loop() {
           // Find beacon
           changePuckState(0);
           changeState(2);
+          changeBeaconState(0);
         }
       }
     }
@@ -225,7 +226,7 @@ void loop() {
         beaconSeenIr2 = beaconSeenIr2 || (ir2==0);
         beaconSeenIr3 = beaconSeenIr3 || (ir3==0);
         
-        if (micros() - lastTransitionTime > listeningTime) {
+        if (micros() - lastBeaconTransitionTime > listeningTime) {
           changeBeaconState(1);      
         }
         break;
@@ -272,7 +273,7 @@ void loop() {
         speedLeft = 0;//-turningSignal;
         speedRight = 0;//turningSignal;
         
-        if (micros() - lastTransitionTime > wanderingTime) {
+        if (micros() - lastBeaconTransitionTime > wanderingTime) {
           changeBeaconState(0);      
         }
         break;
@@ -281,7 +282,7 @@ void loop() {
         speedLeft = -turningSignal;
         speedRight = turningSignal;
         
-        if (micros() - lastTransitionTime > turnAroundTime) {
+        if (micros() - lastBeaconTransitionTime > turnAroundTime) {
           changeBeaconState(0);      
         }
         break;
