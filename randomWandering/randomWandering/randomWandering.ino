@@ -63,7 +63,6 @@ void loop() { // Main loop auto-repeats
   //take action
   int speedLeft = 0;
   int speedRight = 0;
-wanderState = 1;
       switch (wanderState) {
         case 0: // forward
           speedLeft = 200;
