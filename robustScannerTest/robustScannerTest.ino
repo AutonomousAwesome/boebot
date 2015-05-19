@@ -8,7 +8,7 @@ const int pingPinHigh = 6;
 const int pingPinLow = 7;
 const int sonarReadDelay = 15; // ms
 
-const unsigned long puckRange = 40; // cm
+const unsigned long puckRange = 25; // cm
 const unsigned long puckThreshold = 10; // cm
 const int puckSideToCenterAngleEstimate = 10; // degrees
 
