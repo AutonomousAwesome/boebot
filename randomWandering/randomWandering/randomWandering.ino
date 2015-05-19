@@ -8,11 +8,12 @@
 Servo servoLeft;
 Servo servoRight;
 
+//wander parameters
 int wanderState = 0; // 0 = forward, 1 = right turn, 2 = left turn
-
-const int turnProbability = 5;
+long wanderStateFinishedTime = 0;
+const long wanderMaxTurnTime = 1000000;
 const int rightTurnProbability = 500;
-const int stopTurnProbability = 40;
+const long wanderMaxForwardTime = 5000000;
 
 int speedLeft = 0;
 int speedRight = 0;
@@ -42,7 +43,8 @@ void wander(){
     case 0: // forward
       speedLeft = 200;
       speedRight = 200;
-      if(random(1000) < turnProbability){//change wanderState to turning?
+      if(micros() > wanderStateFinishedTime){//change wanderState to turning?
+        wanderStateFinishedTime = micros() + random(wanderMaxTurnTime);
         if(random(1000) < rightTurnProbability){
           wanderState = 1;
           speedLeft = 100;
@@ -58,7 +60,8 @@ void wander(){
       speedLeft = 100;
       speedRight = -100;
       //stop turning?
-      if(random(1000) < stopTurnProbability){
+      if(micros() > wanderStateFinishedTime){
+        wanderStateFinishedTime = micros() + random(wanderMaxForwardTime);
         wanderState = 0;
         speedLeft = 200;
         speedRight = 200;
@@ -68,7 +71,8 @@ void wander(){
       speedLeft = -100;
       speedRight = 100;
       //stop turning?
-      if(random(1000) < stopTurnProbability){
+      if(micros() > wanderStateFinishedTime){
+        wanderStateFinishedTime = micros() + random(wanderMaxForwardTime);
         wanderState = 0;
         speedLeft = 200;
         speedRight = 200;
