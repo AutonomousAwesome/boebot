@@ -93,6 +93,8 @@ void loop() { // Main loop auto-repeats
             break;
 
         case 4: // dump pucks
+            speedLeft = -forwardSignal;
+            speedRight = -forwardSignal;
             break;
     }
 
@@ -102,17 +104,21 @@ void loop() { // Main loop auto-repeats
     int speedRight = 0;
 
     switch (state) {
-        case 0: // forward
+        case 0: // search for pucks
             //turn randomly and drive a bit
             break;
-        case 1: // right turn
+        case 1: // approach puck TODO: puck lost
 
             break;
-        case 2: // left turn
+        case 2: // find beacon
 
             break;
-        case 3: // stop & beep
+        case 3: // approach beacon
 
+            break;
+        case 4: // dump pucks
+            speedLeft = -forwardSignal;
+            speedRight = -forwardSignal;
             break;
     }
 
