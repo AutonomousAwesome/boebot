@@ -4,24 +4,35 @@ Servo servoScanner;
 Servo servoLeft;
 Servo servoRight;
 
-const int pingPinHigh = 6;
-const int pingPinLow = 7;
+const int sonarPinUpper = 6;
+const int sonarPinLower = 7;
 const int sonarReadDelay = 15; // ms
+
+bool sonarLastReadLower = false;
+unsigned long sonarLastReadTime = 0;
+
+unsigned long sonarDistanceUpper = 0; // cm
+unsigned long sonarDistanceLower = 0; // cm
 
 const unsigned long puckRange = 30; // cm
 const unsigned long puckThreshold = 10; // cm
 const int puckSideToCenterAngleEstimate = 15; // degrees
+const unsigned long wallThreshold = 20; // cm
 
-const int scanAngleOffset = 8;
-const int scanAngleLimit = 60; // degrees
-const int scanAngleCenter = 6;
-int scanAngle = 0; // degrees
-int scanAngleDelta = 4; // degrees
+const int sweepAngleOffset = 8; // degrees
+const int sweepAngleLimit = 60; // degrees
+const int sweepAngleCenter = 6; // degrees
 
-bool sawThisSweep = false;
+int sweepAngle = 0; // degrees
+int sweepAngleDelta = 4; // degrees
+
+bool foundWall = false;
+int foundWallAngle = 0; // degrees
+
 bool sweepJustOver = false;
+bool sawThisSweep = false;
 bool foundPuck = false;
-int foundPuckAngle = 0;
+int foundPuckAngle = 0; // degrees
 
 void setup() {
   Serial.begin(9600);
@@ -36,19 +47,29 @@ unsigned long time = 0;
 
 void loop() {
   
+  // Test state machine
+  updateSonars();
+  
+  checkForWall();
+  
+  if (foundWall) {
+    state = 3;
+  }
+  
   int speedLeft = 0;
   int speedRight = 0;
   
   time++;
   
   if (state == 0) {
-    sweep();
+    sweepForPuck();
     
     if (sweepJustOver) {
       if (foundPuck) {
         Serial.print("Found puck at angle: ");
         Serial.println(foundPuckAngle);
-        if (abs(foundPuckAngle) < scanAngleCenter) {
+        
+        if (abs(foundPuckAngle) < sweepAngleCenter) {
           state = 2;
           time = 0;
         } else {
@@ -89,6 +110,16 @@ void loop() {
       time = 0;
     }
   }
+  else if (state == 3) {
+    // Turn around
+    speedLeft = 30;
+    speedRight = -30;
+    
+    if (time > 300) {
+      state = 0;
+      time = 0;
+    }
+  }
     
   servoLeft.writeMicroseconds(1500 - speedLeft);
   servoRight.writeMicroseconds(1500 + speedRight);
@@ -97,66 +128,34 @@ void loop() {
   delay(10);
 }
 
-// Moves the scan servo and sweeps to find the puck. Only finds puck when
-// sweeping to the right, in order to make it simple and robust.
-void sweep() {
-  unsigned long highDistance = checkSonar(pingPinHigh);
-  unsigned long lowDistance = checkSonar(pingPinLow);
+void updateSonars() {
+  // Use micros in order to avoid delays that stall the whole state machine
+  unsigned long currentTime = micros();
   
-  bool seesPuck = (lowDistance + puckThreshold < highDistance) && (lowDistance < puckRange);
-  
-  if (!sawThisSweep) {
-    if (seesPuck) {
-      // Sweeping to the right
-      foundPuckAngle = scanAngle + puckSideToCenterAngleEstimate;
-      
-      sawThisSweep = true;
-      tone(2, 3000, 100);
+  if (currentTime - sonarLastReadTime >= sonarReadDelay) {
+    if (sonarLastReadLower) {
+      // Read upper
+      sonarDistanceUpper = readSonar(sonarPinUpper);
+    } else {
+      // Read lower
+      sonarDistanceLower = readSonar(sonarPinLower);
     }
+    
+    sonarLastReadLower = !sonarLastReadLower;
+    sonarLastReadTime = currentTime;
   }
-  
-  // Rotate sensor
-  scanAngle += scanAngleDelta;
-  
-  // Reached end of angle limit?
-  sweepJustOver = false;
-  
-  if (abs(scanAngle) > scanAngleLimit) {
-    // Sweep ended
-    foundPuck = sawThisSweep;
-    
-    // Sweeping right?
-    if (scanAngleDelta > 0) {
-      sweepJustOver = true;
-      scanAngle = 0;
-    }
-    
-    // Sweeping left?
-    if (scanAngleDelta < 0) {
-      // Reset variables for next sweep to the right
-      sawThisSweep = false;
-      foundPuck = false;
-      foundPuckAngle = 0;
-    }
-    
-    // Switch scan direction
-    scanAngleDelta = -scanAngleDelta;
-  }
-  
-  int servoTiming = 1500 + ((long)(scanAngleOffset + scanAngle) * 820) / 90;
-  servoScanner.writeMicroseconds(servoTiming);
 }
 
-unsigned long checkSonar(int pingPin) {
+unsigned long readSonar(int pin) {
   // Start ranging
-  digitalWrite(pingPin, HIGH);
+  digitalWrite(pin, HIGH);
   delayMicroseconds(5);
-  digitalWrite(pingPin, LOW);
+  digitalWrite(pin, LOW);
   
   // Wait for the result
-  pinMode(pingPin, INPUT);
-  unsigned long duration = pulseIn(pingPin, HIGH, (unsigned long)3000);//5772); // Read echo pulse
-  delay(sonarReadDelay); // Make sure that we wait to let the sound die out so that it doesn't fool any other sensor
+  pinMode(pin, INPUT);
+  unsigned long duration = pulseIn(pin, HIGH, (unsigned long)3000);//5772); // Read echo pulse
+  //delay(sonarReadDelay); // Make sure that we wait to let the sound die out so that it doesn't fool any other sensor
   
   if (duration == 0) {
     duration = 3000;
@@ -165,14 +164,71 @@ unsigned long checkSonar(int pingPin) {
   unsigned long inches = duration / 148;
   unsigned long cm = inches * 2.54;
   
-  //Serial.print(pingPin);
+  //Serial.print(pin);
   //Serial.print(" cm: ");
   //Serial.print(cm);
   //Serial.print("\t");
   
   // Make sure that we reset the pin before leaving the function
-  pinMode(pingPin, OUTPUT);
-  digitalWrite(pingPin, LOW);
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
   
   return cm;
+}
+
+void checkForWall() {
+  foundWall = false;
+  
+  if (sonarDistanceUpper < wallThreshold) {
+    foundWall = true;
+    foundWallAngle = sweepAngle;
+  }
+}
+
+// Moves the scan servo and sweeps to find the puck. Only finds puck when
+// sweeping to the right, in order to make it simple and robust.
+void sweepForPuck() {
+  bool seesPuck = (sonarDistanceLower + puckThreshold < sonarDistanceUpper) && (sonarDistanceLower < puckRange);
+  
+  if (!sawThisSweep) {
+    if (seesPuck) {
+      // Sweeping to the right
+      foundPuckAngle = sweepAngle + puckSideToCenterAngleEstimate;
+      
+      sawThisSweep = true;
+      tone(2, 3000, 100);
+    }
+  }
+  
+  // Rotate sensor
+  sweepAngle += sweepAngleDelta;
+  
+  // Reached end of angle limit?
+  sweepJustOver = false;
+  
+  if (abs(sweepAngle) > sweepAngleLimit) {
+    // Sweep ended
+    foundPuck = sawThisSweep;
+    
+    // Sweeping right?
+    if (sweepAngleDelta > 0) {
+      sweepJustOver = true;
+      sweepAngle = 0;
+    }
+    
+    // Sweeping left?
+    if (sweepAngleDelta < 0) {
+      // Reset variables for next sweep to the right
+      sawThisSweep = false;
+      foundPuck = false;
+      foundPuckAngle = 0;
+    }
+    
+    // Switch scan direction
+    sweepAngleDelta = -sweepAngleDelta;
+  }
+  
+  int servoTiming = 1500 + ((long)(sweepAngleOffset + sweepAngle) * 820) / 90;
+  servoScanner.writeMicroseconds(servoTiming);
+  delay(sonarReadDelay);
 }
