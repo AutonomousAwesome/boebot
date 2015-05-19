@@ -11,7 +11,7 @@ long lastTransitionTime = 0;
 long listeningTime = 50000;
 long wanderingTime = 7000000;
 long turnAroundTime = 4000000;
-long turningTime = 500000;
+long turningTime = 50000;
 long startTime = 0;
 long loopPeriod = 1000;
 
