@@ -69,8 +69,8 @@ void loop() {
         Serial.print("Found puck at angle: ");
         Serial.println(foundPuckAngle);
         
+        // Puck straight ahead?
         if (abs(foundPuckAngle) < sweepAngleCenter) {
-          
           if (foundPuckDistance < 20) {
             state = 3; // Eat!
             time = 0;
@@ -79,8 +79,13 @@ void loop() {
             time = 0;
           }
         } else {
-          state = 1;
-          time = 0;
+          if (foundPuckDistance <= 8) {
+            state = 3; // Eat!
+            time = 0;
+          } else {
+            state = 1; // Turn to the puck
+            time = 0;
+          }
         }
       } else {
         state = 2;
