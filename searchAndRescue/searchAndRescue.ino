@@ -148,7 +148,7 @@ void loop() {
               changePuckState(3);
             }
           } else {
-            if (foundPuckDistance <= 8) {
+            if (foundPuckDistance <= 10) {
               // Eat puck!
               changePuckState(4);
             } else {
@@ -171,7 +171,7 @@ void loop() {
     else if (puckState == 1) { // Wander
       wander();
       
-      if (puckTimeSinceStateChange > 2000000) {
+      if (puckTimeSinceStateChange > 6000000) {
         changePuckState(0);
       }
     }
@@ -205,6 +205,7 @@ void loop() {
       speedRight = 30;
       
       if (puckTimeSinceStateChange > 3000000) {
+        tone(2, 2000, 1000);
         pucks++;
         
         if (pucks < 2) {
