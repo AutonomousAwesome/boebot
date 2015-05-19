@@ -2,9 +2,9 @@
 Servo servoLeft;
 Servo servoRight;
 
-int irReceiverPin1 = 4;
-int irReceiverPin2 = 4;
-int irReceiverPin3 = 4;
+int irReceiverPinRight = 9;
+int irReceiverPinLeft = 5;
+int irReceiverPinBack = 3;
 int ir1, ir2, ir3 = 100;
 
 long lastTransitionTime = 0;
@@ -13,7 +13,7 @@ long wanderingTime = 7000000;
 long turnAroundTime = 4000000;
 long turningTime = 500000;
 long startTime = 0;
-long loopPeriod = 10000;
+long loopPeriod = 1000;
 
 boolean beaconSeenIr1 = false;
 boolean beaconSeenIr2 = false;
@@ -23,7 +23,7 @@ boolean beaconSeenIr3 = false;
 int speedLeft = 0;
 int speedRight = 0;
 
-int forwardSignal = 200;
+int forwardSignal = -200;
 int turningSignal = 100;
 
 int state = 0;
@@ -41,21 +41,21 @@ void loop()
   while(startTime > micros()) ; // wait here until we get constant looptime
   startTime = micros() + loopPeriod;
   
-  
+  /*
   Serial.print(ir1);
   Serial.print("\t");
   Serial.print(ir2);
   Serial.print("\t");
-  Serial.println(ir3);
+  Serial.println(ir3);*/
   // States
   switch(state) {
     
     case 0:
       //Listening state
 
-        ir1 = analogRead(irReceiverPin1);
-        ir2 = analogRead(irReceiverPin1);
-        ir3 = analogRead(irReceiverPin1);
+        ir1 = digitalRead(irReceiverPinLeft);
+        ir2 = digitalRead(irReceiverPinRight);
+        ir3 = digitalRead(irReceiverPinBack);
         
         beaconSeenIr1 = beaconSeenIr1 || (ir1==0);
         beaconSeenIr2 = beaconSeenIr2 || (ir2==0);
@@ -107,8 +107,8 @@ void loop()
      case 2:
      //Wandering state
      //TODO: some wandering
-     speedLeft = -turningSignal;
-     speedRight = turningSignal;
+     speedLeft = 0;//-turningSignal;
+     speedRight = 0;//turningSignal;
      if (micros() - lastTransitionTime > wanderingTime) {
           changeState(0);      
      }
