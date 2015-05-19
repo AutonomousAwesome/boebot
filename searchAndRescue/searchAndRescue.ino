@@ -16,8 +16,7 @@ long loopPeriod = 1000; // period in micro seconds
 const int sonarSensorHigh = 9;
 const int sonarSensorLow = 8;
 
-//----------Variables for beacon finding-----------
-
+//---------- Beacon finding -----------
 int irReceiverPinRight = 9;
 int irReceiverPinLeft = 5;
 int irReceiverPinBack = 3;
@@ -49,8 +48,44 @@ int sensorRight = A3;
 
 float thresholdBlack = 3.8;
 float thresholdWhite = 3.0; 
+//-------------------------------------
 
-//-------------------------------------------------
+//---------- Puck finding -----------
+int puckState = 0;
+unsigned long puckStateTransitionTime = 0;
+unsigned long puckTimeSinceStateChange = 0;
+
+const int sonarPinUpper = 6;
+const int sonarPinLower = 7;
+const int sonarReadDelay = 20; // ms
+
+bool sonarLastReadLower = false;
+unsigned long sonarLastReadTime = 0;
+unsigned long sonarDistanceUpper = 0; // cm
+unsigned long sonarDistanceLower = 0; // cm
+
+const unsigned long puckRange = 40; // cm
+const unsigned long puckThreshold = 10; // cm
+const int puckSideToCenterAngleEstimate = 15; // degrees
+const unsigned long wallThreshold = 20; // cm
+
+const int sweepAngleOffset = 8; // degrees
+const int sweepAngleLimit = 60; // degrees
+const int sweepAngleCenter = 6; // degrees
+
+int sweepAngle = 0; // degrees
+int sweepAngleDelta = 4; // degrees
+
+bool foundWall = false;
+int foundWallAngle = 0; // degrees
+
+bool sweepJustOver = false;
+bool sawThisSweep = false;
+bool foundPuck = false;
+int foundPuckAngle = 0; // degrees
+unsigned long foundPuckDistance = 0; // cm
+//-----------------------------------
+
 void setup() {
   Serial.begin(9600);
   tone(2, 3000, 1000);
@@ -64,13 +99,113 @@ void loop() {
   while(startTime > micros()) ; // wait here until we get constant looptime
   startTime = micros() + loopPeriod;
   
+  speedLeft = 0;
+  speedRight = 0;
+  
+  // Read global sensors
+  updateSonars();
+  
+  // Always look for wall
+  checkForWall();
+  
+  //if (foundWall) {
+  //  changeState(1);
+  //}
+  
   // Make decision(s)
   switch (state) {
-    case 0: // search for pucks
+    case 0: // Puck finding
+    loopPeriod = 10000;
+    
+    puckTimeSinceStateChange = micros() - puckStateTransitionTime;
+    
+    if (puckState == 0) { // Sweep, has to do this occasionally
+      sweepForPuck();
+      
+      if (sweepJustOver) {
+        if (foundPuck) {
+          Serial.print("Found puck at angle: ");
+          Serial.println(foundPuckAngle);
+          
+          // Puck straight ahead?
+          if (abs(foundPuckAngle) < sweepAngleCenter) {
+            if (foundPuckDistance < 20) {
+              // Eat puck!
+              changePuckState(4);
+            } else {
+              // Nudge forward
+              changePuckState(3);
+            }
+          } else {
+            if (foundPuckDistance <= 8) {
+              // Eat puck!
+              changePuckState(4);
+            } else {
+              // Nudge rotate
+              changePuckState(2);
+            }
+          }
+        } else {
+          // Found no puck, wander
+          changePuckState(1);
+        }
+      }
+    }
+    else if (puckState == 1) { // Wander
+      speedLeft = 0;
+      speedRight = 0;
+      
+      if (puckTimeSinceStateChange > 2000000) {
+        changePuckState(0);
+      }
+    }
+    else if (puckState == 2) { // Nudge rotate towards a puck
+      // Rotate
+      if (foundPuckAngle > 0) {
+        // Rotate right
+        speedLeft = 30;
+        speedRight = -30;
+      }
+      else {
+        // Rotate left
+        speedLeft = -30;
+        speedRight = 30;
+      }
+      
+      if (puckTimeSinceStateChange > 200000) {
+        changePuckState(0);
+      }
+    }
+    else if (puckState == 3) { // Nudge forward towards puck
+      speedLeft = 30;
+      speedRight = 30;
+      
+      if (puckTimeSinceStateChange > 1000000) {
+        changePuckState(0);
+      }
+    }
+    else if (puckState == 4) { // Go forward and eat puck!
+      speedLeft = 30;
+      speedRight = 30;
+      
+      if (puckTimeSinceStateChange > 3000000) {
+        pucks++;
+        
+        if (pucks < 2) {
+          changePuckState(0);
+        } else {
+          // Find beacon
+          changePuckState(0);
+          changeState(2);
+        }
+      }
+    }
+    
     break;
-    case 1:
+    case 1: // ---
     break;
     case 2: // find beacon
+    
     if(checkSafeZone(thresholdBlack)){
       changeState(3);
       changeBeaconState(0);
@@ -236,3 +371,118 @@ boolean checkClear(float threshold){
   }
 }
 //------------------------------
+
+// ---------- Puck finding functions -------------
+void changePuckState(int newState) {
+  //if (puckState != newState) {
+    puckState = newState;
+    puckStateTransitionTime = micros();
+  //}
+}
+void updateSonars() {
+  // Use micros in order to avoid delays that stall the whole state machine
+  unsigned long currentTime = micros();
+  
+  if (currentTime - sonarLastReadTime >= sonarReadDelay) {
+    if (sonarLastReadLower) {
+      // Read upper
+      sonarDistanceUpper = readSonar(sonarPinUpper);
+    } else {
+      // Read lower
+      sonarDistanceLower = readSonar(sonarPinLower);
+      Serial.print("\n");
+    }
+    
+    sonarLastReadLower = !sonarLastReadLower;
+    sonarLastReadTime = currentTime;
+  }
+}
+
+unsigned long readSonar(int pin) {
+  // Start ranging
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pin, LOW);
+  
+  // Wait for the result
+  pinMode(pin, INPUT);
+  unsigned long duration = pulseIn(pin, HIGH, (unsigned long)3000);//5772); // Read echo pulse
+  //delay(sonarReadDelay); // Make sure that we wait to let the sound die out so that it doesn't fool any other sensor
+  
+  if (duration == 0) {
+    duration = 3000;
+  }
+  
+  unsigned long inches = duration / 148;
+  unsigned long cm = inches * 2.54;
+  
+  Serial.print(pin);
+  Serial.print(" cm: ");
+  Serial.print(cm);
+  Serial.print("\t");
+  
+  // Make sure that we reset the pin before leaving the function
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
+  
+  return cm;
+}
+
+void checkForWall() {
+  foundWall = false;
+  
+  if (sonarDistanceUpper < wallThreshold) {
+    foundWall = true;
+    foundWallAngle = sweepAngle;
+  }
+}
+
+// Moves the scan servo and sweeps to find the puck. Only finds puck when
+// sweeping to the right, in order to make it simple and robust.
+void sweepForPuck() {
+  bool seesPuck = (sonarDistanceLower + puckThreshold < sonarDistanceUpper) && (sonarDistanceLower < puckRange);
+  
+  if (!sawThisSweep) {
+    if (seesPuck) {
+      // Sweeping to the right
+      foundPuckAngle = sweepAngle + puckSideToCenterAngleEstimate;
+      foundPuckDistance = sonarDistanceLower;
+      
+      sawThisSweep = true;
+      tone(2, 3000, 100);
+    }
+  }
+  
+  // Rotate sensor
+  sweepAngle += sweepAngleDelta;
+  
+  // Reached end of angle limit?
+  sweepJustOver = false;
+  
+  if (abs(sweepAngle) > sweepAngleLimit) {
+    // Sweep ended
+    foundPuck = sawThisSweep;
+    
+    // Sweeping right?
+    if (sweepAngleDelta > 0) {
+      sweepJustOver = true;
+      sweepAngle = 0;
+    }
+    
+    // Sweeping left?
+    if (sweepAngleDelta < 0) {
+      // Reset variables for next sweep to the right
+      sawThisSweep = false;
+      foundPuck = false;
+      foundPuckAngle = 0;
+    }
+    
+    // Switch scan direction
+    sweepAngleDelta = -sweepAngleDelta;
+  }
+  
+  int servoTiming = 1500 + ((long)(sweepAngleOffset + sweepAngle) * 820) / 90;
+  servoSweeper.writeMicroseconds(servoTiming);
+  delay(sonarReadDelay);
+}
+// -----------------------------------------------
