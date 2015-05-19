@@ -23,8 +23,8 @@ boolean beaconSeenIr3 = false;
 int speedLeft = 0;
 int speedRight = 0;
 
-int forwardSignal = -200;
-int turningSignal = 100;
+int forwardSignal = -100;
+int turningSignal = 50;
 
 int state = 0;
 

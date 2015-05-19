@@ -44,8 +44,8 @@ int dScanAngle = 1;
 
 long lastTransitionTime = 0;
 
-      long startTime = 0;
-      long loopPeriod = 10000; // period in micro seconds
+long startTime = 0;
+long loopPeriod = 10000; // period in micro seconds
 
 void setup()                                 // Built-in initialization block
 {
@@ -192,8 +192,8 @@ float volts(int adPin)                       // Measures volts at adPin
 }
 
 void drive(int speedLeft, int speedRight){
-    servoLeft.writeMicroseconds(1500 + speedLeft);   // Set left servo speed
-    servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed
+    servoLeft.writeMicroseconds(1500 - speedLeft);   // Set left servo speed
+    servoRight.writeMicroseconds(1500 + speedRight); // Set right servo speed
 }
 
 unsigned int checkSonar(int pingPin){
