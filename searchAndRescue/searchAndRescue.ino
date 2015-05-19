@@ -52,7 +52,6 @@ float thresholdWhite = 2.0;//3.0;
 
 //---------- Puck finding -----------
 int puckState = 0;
-int foundNoPuckCount = 0;
 unsigned long puckStateTransitionTime = 0;
 unsigned long puckTimeSinceStateChange = 0;
 
@@ -125,14 +124,12 @@ void loop() {
       
       if (sweepJustOver) {
         if (foundPuck) {
-          foundNoPuckCount = 0;
-          
           Serial.print("Found puck at angle: ");
           Serial.println(foundPuckAngle);
           
           // Puck straight ahead?
           if (abs(foundPuckAngle) < sweepAngleCenter) {
-            if (foundPuckDistance <= 20) {
+            if (foundPuckDistance < 20) {
               // Eat puck!
               changePuckState(4);
             } else {
@@ -149,14 +146,8 @@ void loop() {
             }
           }
         } else {
-          // Found no puck
-          foundNoPuckCount++;
-          
-          if (foundNoPuckCount <= 2) {
-            changePuckState(3); // Nudge forward
-          } else {
-            changePuckState(1); // Wander
-          }
+          // Found no puck, wander
+          changePuckState(1);
         }
       }
     }
@@ -315,10 +306,12 @@ void loop() {
     speedLeft = -forwardSignal;
     speedRight = -forwardSignal;
     break;
+    
     case 5: //Turn around
     speedLeft = -turningSignal;
     speedRight = turningSignal;
     if (micros() - lastTransitionTime > turnAroundTime) {
+      pucks = 0;
       changeBeaconState(0);      
     }
     break;
