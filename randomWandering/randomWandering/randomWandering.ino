@@ -8,7 +8,7 @@
 Servo servoLeft;
 Servo servoRight;
 
-int wanderState = 0; // 0 = forward, 1 = right turn, 2 = left turn, 3 = stop & beep, 4 = reverse
+int wanderState = 0; // 0 = forward, 1 = right turn, 2 = left turn
 
 const int turnProbability = 10;
 const int rightTurnProbability = 500;
@@ -63,7 +63,7 @@ void loop() { // Main loop auto-repeats
   //take action
   int speedLeft = 0;
   int speedRight = 0;
-
+wanderState = 1;
       switch (wanderState) {
         case 0: // forward
           speedLeft = 200;
@@ -77,16 +77,12 @@ void loop() { // Main loop auto-repeats
           speedLeft = -100;
           speedRight = 100;
           break;
-        case 3: // stop & beep
-          speedLeft = 0;
-          speedRight = 0;
-          break;
       }
 
       drive(speedLeft,speedRight);
 }
 
 void drive(int speedLeft, int speedRight){
-    servoLeft.writeMicroseconds(1500 + speedLeft);   // Set left servo speed
-    servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed
+    servoLeft.writeMicroseconds(1500 - speedLeft);   // Set left servo speed
+    servoRight.writeMicroseconds(1500 + speedRight); // Set right servo speed
 }

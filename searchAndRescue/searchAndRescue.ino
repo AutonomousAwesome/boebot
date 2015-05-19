@@ -186,8 +186,8 @@ float volts(int adPin)                       // Measures volts at adPin
 }
 
 void drive(int speedLeft, int speedRight){
-    servoLeft.writeMicroseconds(1500 + speedLeft);   // Set left servo speed
-    servoRight.writeMicroseconds(1500 - speedRight); // Set right servo speed
+    servoLeft.writeMicroseconds(1500 - speedLeft);   // Set left servo speed
+    servoRight.writeMicroseconds(1500 + speedRight); // Set right servo speed
 }
 
 unsigned int checkSonar(int pingPin){
