@@ -46,8 +46,8 @@ int beaconState = 0;
 int sensorLeft = A5;
 int sensorRight = A3;
 
-float thresholdBlack = 3.8;
-float thresholdWhite = 3.0; 
+float thresholdBlack = 3.0; //3.8;
+float thresholdWhite = 2.0; //3.0; 
 //-------------------------------------
 
 //---------- Puck finding -----------
