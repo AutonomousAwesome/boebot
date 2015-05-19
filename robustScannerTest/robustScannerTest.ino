@@ -8,13 +8,13 @@ const int pingPinHigh = 6;
 const int pingPinLow = 7;
 const int sonarReadDelay = 15; // ms
 
-const unsigned long puckRange = 25; // cm
+const unsigned long puckRange = 30; // cm
 const unsigned long puckThreshold = 10; // cm
-const int puckSideToCenterAngleEstimate = 10; // degrees
+const int puckSideToCenterAngleEstimate = 15; // degrees
 
 const int scanAngleOffset = 8;
 const int scanAngleLimit = 60; // degrees
-const int scanAngleCenter = 10;
+const int scanAngleCenter = 6;
 int scanAngle = 0; // degrees
 int scanAngleDelta = 4; // degrees
 
