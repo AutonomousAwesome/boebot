@@ -8,7 +8,7 @@ int irReceiverPinBack = 3;
 int ir1, ir2, ir3 = 100;
 
 long lastTransitionTime = 0;
-long listeningTime = 50000;
+long listeningTime = 200000;
 long wanderingTime = 7000000;
 long turnAroundTime = 500000;
 long turningTime = 50000;
