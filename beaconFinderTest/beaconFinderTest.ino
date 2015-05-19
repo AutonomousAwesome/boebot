@@ -8,21 +8,13 @@
 Servo servoLeft;
 Servo servoRight;
 
-int state = 2; // 0 = search for puck, 1 = aproach puck, 2 = find beacon, 3 = aproach beacon, 4 = dump pucks
-
-//Pins
-//const int sonarSensorHigh = 9;
-//const int sonarSensorLow = 8;
-//const int sharpSensorLow = 4; // is 0
-//const int sharpSensorHigh = 5; // is 1
 const int beaconright = 4;
 const int beaconleft = 5;
 const int beaconrear = 3;
 
-long lastTransitionTime = 0;
 
-      long startTime = 0;
-      long loopPeriod = 10000; // period in micro seconds
+long startTime = 0;
+long loopPeriod = 10000; // period in micro seconds
 
 void setup()                                 // Built-in initialization block
 {
@@ -60,24 +52,39 @@ void loop() { // Main loop auto-repeats
 
     drive(speedLeft,speedRight);
 }
-
-int beaconScan(){
+//returns if the beacon is seen and the relative angle in which the beacon is, 0 is forward, positive is left
+void beaconScan(){
   int bRight = digitalRead(beaconright);
   int bLeft = digitalRead(beaconleft);
   int bRear = digitalRead(beaconrear); 
- if(bRight && bLeft){
-   return 1;
- }else if (bRight){
-   return 2;
- }else if (bLeft){
-   return 3;
- }else
-   return 0;
-}
-
-float volts(int adPin)                       // Measures volts at adPin
-{ // Returns floating point voltage
-    return float(analogRead(adPin)) * 5.0 / 1024.0;
+  if(!bRight && !bLeft && !bRear){ // sees nothing
+    seesBeacon = false;
+    beaconAngle = 0;
+    return  
+  }else if (bRight && !bLeft && !bRear){ // only right
+    seesBeacon = true;
+    beaconAngle = -120;
+    return;
+  }else if (!bRight && bLeft && !bRear){ //only left
+    seesBeacon = true;
+    beaconAngle = 120;
+    return ;
+  }else if (!bRight && !bLeft && bRear){ // only rear
+    seesBeacon = true;
+    beaconAngle = 180;
+    return ;
+  }else if (bRight && bLeft){ // left & right
+    seesBeacon = true;
+    beaconAngle = 0;
+    return ;
+  }else if (bRight && !bLeft && bRear){ // right & rear
+    seesBeacon = true;
+    beaconAngle = -150;
+    return ;
+  }else if (!bRight && bLeft && bRear){ // rear & left
+    seesBeacon = true;
+    beaconAngle = 150;
+    return ;
 }
 
 void drive(int speedLeft, int speedRight){
