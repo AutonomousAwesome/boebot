@@ -5,12 +5,15 @@ Servo servoLeft;
 Servo servoRight;
 
 int state = 0; // 0 = search for puck, 1 = aproach puck, 2 = find beacon, 3 = aproach beacon, 4 = dump pucks
+int previousState = 0;
 int pucks = 0; // count of pucks in the hold
 
 // Timing
 long startTime = 0;
 long lastTransitionTime = 0;
 long loopPeriod = 1000; // period in micro seconds
+
+long wallTurningTime = 1000000;
 
 // Pins
 const int sonarSensorHigh = 9;
@@ -22,7 +25,7 @@ int irReceiverPinLeft = 5;
 int irReceiverPinBack = 3;
 int ir1, ir2, ir3 = 100;
 
-long listeningTime = 200000;
+long listeningTime = 400000;//200000;
 long wanderingTime = 2000000;
 long turnAroundTime = 500000;
 long turningTime = 50000;
@@ -72,6 +75,7 @@ const unsigned long wallThreshold = 20; // cm
 
 const int sweepAngleOffset = 8; // degrees
 const int sweepAngleLimit = 60; // degrees
+const int sweepAngleSlow = 16;
 const int sweepAngleCenter = 6; // degrees
 
 int sweepAngle = 0; // degrees
@@ -108,23 +112,25 @@ void loop() {
   while(startTime > micros()) ; // wait here until we get constant looptime
   startTime = micros() + loopPeriod;
   
-  speedLeft = 0;
-  speedRight = 0;
-  
   // Read global sensors
   updateSonars();
   
   // Always look for wall
   checkForWall();
   
-  //if (foundWall) {
-  //  changeState(1);
-  //}
+  if (state != 1 && foundWall) {
+    changeState(1);
+  }
   
   // Make decision(s)
   switch (state) {
-    case 0: // Puck finding
+    // Puck finding
+    // ------------
+    case 0:
     loopPeriod = 10000;
+    
+    speedLeft = 0;
+    speedRight = 0;
     
     puckTimeSinceStateChange = micros() - puckStateTransitionTime;
     
@@ -148,7 +154,7 @@ void loop() {
               changePuckState(3);
             }
           } else {
-            if (foundPuckDistance <= 10) {
+            if (foundPuckDistance <= 12) {
               // Eat puck!
               changePuckState(4);
             } else {
@@ -188,7 +194,13 @@ void loop() {
         speedRight = 30;
       }
       
-      if (puckTimeSinceStateChange > 200000) {
+      unsigned long timeToNudgeTurn = 200000;
+      
+      if (abs(foundPuckAngle) < sweepAngleSlow) {
+        timeToNudgeTurn /= 2;
+      }
+      
+      if (puckTimeSinceStateChange > timeToNudgeTurn) {
         changePuckState(0);
       }
     }
@@ -219,9 +231,23 @@ void loop() {
     }
     
     break;
-    case 1: // ---
+    // ------------
+    
+    // Wall avoidance
+    // --------------
+    case 1:
+    speedLeft = 30;
+    speedRight = -30;
+    
+    if (micros() - lastTransitionTime > wallTurningTime) {
+      changeState(previousState);
+    }
     break;
-    case 2: // find beacon
+    // --------------
+    
+    // Find beacon
+    // -----------
+    case 2:
     loopPeriod = 1000;
     
     if(checkSafeZone(thresholdBlack)){
@@ -255,7 +281,7 @@ void loop() {
         }
         else if(!beaconSeenIr1 && !beaconSeenIr2){
           //Saw something back, turn around
-          beaconSeenIr3==false;
+          beaconSeenIr3=false;
           changeBeaconState(3);
         }
         else {
@@ -286,7 +312,9 @@ void loop() {
         break;
         case 2:
         //Wandering state
-        wander();
+        //wander();
+        speedRight = 0;
+        speedLeft = 0;
         
         if (micros() - lastTransitionTime > wanderingTime) {
           changeBeaconState(0);      
@@ -304,7 +332,11 @@ void loop() {
       }
     }
     break;
-    case 3: // drive into the safe zone
+    // -----------
+    
+    // Drive into the safe zone
+    // ------------------------
+    case 3:
     if (micros() - lastTransitionTime > driveToSafeZoneTime) {
       changeState(4);      
     }
@@ -312,7 +344,11 @@ void loop() {
     speedLeft = forwardSignal;
     speedRight = forwardSignal;
     break;
-    case 4: // dump pucks
+    // ------------------------
+    
+    // Dump pucks
+    // ----------
+    case 4:
     if(checkClear(thresholdWhite)){
       changeState(5);
       speedLeft=stoppingSignal;
@@ -321,17 +357,24 @@ void loop() {
     speedLeft = -forwardSignal;
     speedRight = -forwardSignal;
     break;
-    case 5: //Turn around
+    // ----------
+    
+    // Turn around
+    // -----------
+    case 5:
     speedLeft = -turningSignal;
     speedRight = turningSignal;
     if (micros() - lastTransitionTime > turnAroundTime) {
-      changeBeaconState(0);      
+      speedLeft = -turningSignal;
+      speedRight = turningSignal;
+      changeState(0);      
     }
     break;
+    // -----------
   }
   
   // Drive the robot!
-  drive(speedLeft,speedRight);
+  drive(speedLeft, speedRight);
 }
 
 float volts(int adPin) { // Returns floating point voltage
@@ -344,8 +387,9 @@ void drive(int speedLeft, int speedRight){
 }
 
 void changeState(int newState){
-    state = newState;
-    lastTransitionTime = micros();
+  previousState = state;
+  state = newState;
+  lastTransitionTime = micros();
 }
 
 //---- Beacon functions ------
@@ -432,10 +476,11 @@ unsigned long readSonar(int pin) {
   unsigned long inches = duration / 148;
   unsigned long cm = inches * 2.54;
   
+  /*
   Serial.print(pin);
   Serial.print(" cm: ");
   Serial.print(cm);
-  Serial.print("\t");
+  Serial.print("\t");*/
   
   // Make sure that we reset the pin before leaving the function
   pinMode(pin, OUTPUT);
