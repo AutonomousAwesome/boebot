@@ -13,7 +13,7 @@ long startTime = 0;
 long lastTransitionTime = 0;
 long loopPeriod = 1000; // period in micro seconds
 
-long wallTurningTime = 1000000;
+long wallTurningTime = 2000000;
 
 // Pins
 const int sonarSensorHigh = 9;
@@ -40,20 +40,22 @@ boolean beaconSeenIr3 = false;
 int speedLeft = 0;
 int speedRight = 0;
 
-int forwardSignal = 100;
-int turningSignal = 50;
-int stoppingSignal = 0;
+const int forwardSignal = 100;
+const int turningSignal = 30;
+const int stoppingSignal = 0;
 
 int beaconState = 0;
 
 int sensorLeft = A5;
 int sensorRight = A3;
 
-float thresholdBlack = 3.0; //3.8;
-float thresholdWhite = 2.0; //3.0; 
+float thresholdBlack = 2.0;//3.0; //3.8;
+float thresholdWhite = 1.0; //3.0; 
 //-------------------------------------
 
 //---------- Puck finding -----------
+unsigned long puckFindTimeout = 90000000;
+
 int puckState = 0;
 int foundNoPuckCount = 0;
 unsigned long puckStateTransitionTime = 0;
@@ -134,6 +136,15 @@ void loop() {
     
     puckTimeSinceStateChange = micros() - puckStateTransitionTime;
     
+    // Timeout
+    if (micros() - lastTransitionTime > puckFindTimeout) {
+      // Find beacon
+      tone(2, 4000, 1000);
+      changePuckState(0);
+      changeState(2);
+      changeBeaconState(0);
+    }
+    
     if (puckState == 0) { // Sweep, has to do this occasionally
       sweepForPuck();
       
@@ -146,7 +157,7 @@ void loop() {
           
           // Puck straight ahead?
           if (abs(foundPuckAngle) < sweepAngleCenter) {
-            if (foundPuckDistance <= 20) {
+            if (foundPuckDistance <= 30) {
               // Eat puck!
               changePuckState(4);
             } else {
@@ -185,13 +196,13 @@ void loop() {
       // Rotate
       if (foundPuckAngle > 0) {
         // Rotate right
-        speedLeft = 30;
-        speedRight = -30;
+        speedLeft = turningSignal;
+        speedRight = -turningSignal;
       }
       else {
         // Rotate left
-        speedLeft = -30;
-        speedRight = 30;
+        speedLeft = -turningSignal;
+        speedRight = turningSignal;
       }
       
       unsigned long timeToNudgeTurn = 200000;
@@ -205,16 +216,16 @@ void loop() {
       }
     }
     else if (puckState == 3) { // Nudge forward towards puck
-      speedLeft = 30;
-      speedRight = 30;
+      speedLeft = turningSignal;
+      speedRight = turningSignal;
       
       if (puckTimeSinceStateChange > 1000000) {
         changePuckState(0);
       }
     }
     else if (puckState == 4) { // Go forward and eat puck!
-      speedLeft = 30;
-      speedRight = 30;
+      speedLeft = turningSignal;
+      speedRight = turningSignal;
       
       if (puckTimeSinceStateChange > 3000000) {
         tone(2, 2000, 1000);
@@ -237,8 +248,8 @@ void loop() {
     // Wall avoidance
     // --------------
     case 1:
-    speedLeft = 30;
-    speedRight = -30;
+    speedLeft = 50;
+    speedRight = -50;
     
     if (micros() - lastTransitionTime > wallTurningTime) {
       changeState(previousState);
@@ -312,10 +323,11 @@ void loop() {
         }
         break;
         case 2:
-        //Wandering state
-        //wander();
-        speedRight = 0;
-        speedLeft = 0;
+        // Wandering state
+        loopPeriod = 10000;
+        wander();
+        //speedRight = 0;
+        //speedLeft = 0;
         
         if (micros() - lastBeaconTransitionTime > wanderingTime) {
           changeBeaconState(0);      
@@ -350,11 +362,17 @@ void loop() {
     // Dump pucks
     // ----------
     case 4:
+    if (micros() - lastTransitionTime > driveToSafeZoneTime * 2) {
+      changeState(5);
+      speedLeft=stoppingSignal;
+      speedRight=stoppingSignal;
+    }
+    /*
     if(checkClear(thresholdWhite)){
       changeState(5);
       speedLeft=stoppingSignal;
       speedRight=stoppingSignal; 
-    }
+    }*/
     speedLeft = -forwardSignal;
     speedRight = -forwardSignal;
     break;
@@ -363,11 +381,9 @@ void loop() {
     // Turn around
     // -----------
     case 5:
-    speedLeft = -turningSignal;
-    speedRight = turningSignal;
-    if (micros() - lastTransitionTime > turnAroundTime) {
-      speedLeft = -turningSignal;
-      speedRight = turningSignal;
+    speedLeft = -50;
+    speedRight = 50;
+    if (micros() - lastTransitionTime > turnAroundTime * 3) {
       pucks = 0;
       changeState(0);      
     }
