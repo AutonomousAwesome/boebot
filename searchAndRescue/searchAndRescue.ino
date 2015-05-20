@@ -226,6 +226,7 @@ void loop() {
           // Find beacon
           changePuckState(0);
           changeState(2);
+          changeBeaconState(0);
         }
       }
     }
