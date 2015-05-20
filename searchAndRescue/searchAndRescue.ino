@@ -54,7 +54,7 @@ float thresholdWhite = 1.0; //3.0;
 //-------------------------------------
 
 //---------- Puck finding -----------
-unsigned long puckFindTimeout = 45000000;
+unsigned long puckFindTimeout = 60000000;
 
 int puckState = 0;
 int foundNoPuckCount = 0;
@@ -178,7 +178,7 @@ void loop() {
           // Found no puck
           foundNoPuckCount++;
           
-          if (foundNoPuckCount <= 2) {
+          if (foundNoPuckCount <= 4) {
             changePuckState(3); // Nudge forward
           } else {
             changePuckState(1); // Wander
@@ -496,11 +496,11 @@ unsigned long readSonar(int pin) {
   
   // Wait for the result
   pinMode(pin, INPUT);
-  unsigned long duration = pulseIn(pin, HIGH, (unsigned long)3000);//5772); // Read echo pulse
+  unsigned long duration = pulseIn(pin, HIGH, (unsigned long)5772); // Read echo pulse
   //delay(sonarReadDelay); // Make sure that we wait to let the sound die out so that it doesn't fool any other sensor
   
   if (duration == 0) {
-    duration = 3000;
+    duration = 5772;
   }
   
   unsigned long inches = duration / 148;
