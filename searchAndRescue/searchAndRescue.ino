@@ -29,7 +29,7 @@ long listeningTime = 400000;//200000;
 long wanderingTime = 2000000;
 long turnAroundTime = 500000;
 long turningTime = 50000;
-long driveToSafeZoneTime = 2000000;
+long driveToSafeZoneTime = 1000000;
 long lastBeaconTransitionTime = 0;
 
 boolean beaconSeenIr1 = false;
@@ -98,7 +98,7 @@ int wanderState = 0; // 0 = forward, 1 = right turn, 2 = left turn
 long wanderStateFinishedTime = 0;
 const long wanderMaxTurnTime = 1000000;
 const int rightTurnProbability = 500;
-const long wanderMaxForwardTime = 5000000;
+const long wanderMaxForwardTime = 10000000;
 //--------------------------------
 
 void setup() {
@@ -120,7 +120,8 @@ void loop() {
   // Always look for wall
   checkForWall();
   
-  if (state != 1 && foundWall) {
+  //if (state != 1 && foundWall) {
+  if (foundWall && (state == 0 || (state == 2 && beaconState == 2))) {
     changeState(1);
   }
   
@@ -227,7 +228,7 @@ void loop() {
       speedLeft = turningSignal;
       speedRight = turningSignal;
       
-      if (puckTimeSinceStateChange > 3000000) {
+      if (puckTimeSinceStateChange > 3500000) {
         tone(2, 2000, 1000);
         pucks++;
         
