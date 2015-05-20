@@ -217,18 +217,18 @@ void loop() {
       }
     }
     else if (puckState == 3) { // Nudge forward towards puck
-      speedLeft = turningSignal;
-      speedRight = turningSignal;
+      speedLeft = 200;
+      speedRight = 200;
       
       if (puckTimeSinceStateChange > 1000000) {
         changePuckState(0);
       }
     }
     else if (puckState == 4) { // Go forward and eat puck!
-      speedLeft = turningSignal;
-      speedRight = turningSignal;
+      speedLeft = 200;
+      speedRight = 200;
       
-      if (puckTimeSinceStateChange > 3500000) {
+      if (puckTimeSinceStateChange > 3000000) {
         tone(2, 2000, 1000);
         pucks++;
         
@@ -249,7 +249,7 @@ void loop() {
     // Wall avoidance
     // --------------
     case 1:
-    speedLeft = 50;
+    speedLeft = 0;
     speedRight = -50;
     
     if (micros() - lastTransitionTime > wallTurningTime) {
