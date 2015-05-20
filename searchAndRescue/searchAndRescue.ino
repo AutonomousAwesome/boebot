@@ -368,6 +368,7 @@ void loop() {
     if (micros() - lastTransitionTime > turnAroundTime) {
       speedLeft = -turningSignal;
       speedRight = turningSignal;
+      pucks = 0;
       changeState(0);      
     }
     break;
