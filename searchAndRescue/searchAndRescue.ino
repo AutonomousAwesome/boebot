@@ -270,7 +270,7 @@ void loop() {
         beaconSeenIr2 = beaconSeenIr2 || (ir2==0);
         beaconSeenIr3 = beaconSeenIr3 || (ir3==0);
         
-        if (micros() - lastTransitionTime > listeningTime) {
+        if (micros() - lastBeaconTransitionTime > listeningTime) {
           changeBeaconState(1);      
         }
         break;
@@ -317,7 +317,7 @@ void loop() {
         speedRight = 0;
         speedLeft = 0;
         
-        if (micros() - lastTransitionTime > wanderingTime) {
+        if (micros() - lastBeaconTransitionTime > wanderingTime) {
           changeBeaconState(0);      
         }
         break;
@@ -326,7 +326,7 @@ void loop() {
         speedLeft = -turningSignal;
         speedRight = turningSignal;
         
-        if (micros() - lastTransitionTime > turnAroundTime) {
+        if (micros() - lastBeaconTransitionTime > turnAroundTime) {
           changeBeaconState(0);      
         }
         break;
