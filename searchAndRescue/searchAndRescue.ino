@@ -54,7 +54,7 @@ float thresholdWhite = 1.0; //3.0;
 //-------------------------------------
 
 //---------- Puck finding -----------
-unsigned long puckFindTimeout = 90000000;
+unsigned long puckFindTimeout = 45000000;
 
 int puckState = 0;
 int foundNoPuckCount = 0;
@@ -70,7 +70,7 @@ unsigned long sonarLastReadTime = 0;
 unsigned long sonarDistanceUpper = 0; // cm
 unsigned long sonarDistanceLower = 0; // cm
 
-const unsigned long puckRange = 40; // cm
+const unsigned long puckRange = 80; // cm
 const unsigned long puckThreshold = 10; // cm
 const int puckSideToCenterAngleEstimate = 15; // degrees
 const unsigned long wallThreshold = 20; // cm
@@ -121,7 +121,7 @@ void loop() {
   checkForWall();
   
   //if (state != 1 && foundWall) {
-  if (foundWall && (state == 0 || (state == 2 && beaconState == 2))) {
+  if (foundWall && (state == 0 || state == 6 || (state == 2 && beaconState == 2))) {
     changeState(1);
   }
   
@@ -386,6 +386,17 @@ void loop() {
     speedRight = 50;
     if (micros() - lastTransitionTime > turnAroundTime * 3) {
       pucks = 0;
+      changeState(6);      
+    }
+    break;
+    // -----------
+    
+    // Drive away from beacon
+    // -----------
+    case 6:
+    speedLeft = forwardSignal;
+    speedRight = forwardSignal;
+    if (micros() - lastTransitionTime > driveToSafeZoneTime * 3) {
       changeState(0);      
     }
     break;
