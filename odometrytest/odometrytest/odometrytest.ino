@@ -53,7 +53,7 @@ void loop() { // Main loop auto-repeats
       speedRight = 0;
       break;
   }
-  drive();
+  driveToHeading(goalHeading);
 }
     
 void odometry(int speedRight, int speedLeft){
@@ -71,6 +71,31 @@ void odometry(int speedRight, int speedLeft){
   posY += sin(heading*3.14/180)*speed*loopPeriod_s;
 }
 
+void driveToHeading(int goalHeading){
+  int headingDiff = goalHeading - heading;
+    while( headingDiff < -180){
+    headingDiff +=360;
+  }
+  while( headingDiff > 180){
+    headingDiff -=360;
+  }
+  
+  //headingDiff in range -180 to 180
+  if(headingDiff > 30){ // left turn
+    speedLeft = -30;
+    speedRight = 30;
+    return;
+  }
+  if(headingDiff < -30){ //right turn
+    speedLeft = 30;
+    speedRight = -30;
+    return;
+  }
+  
+  speedLeft = 30  - headingDiff*3;
+  speedRight = 30 + headingDiff*3;
+}
+    
 void drive(){
   servoLeft.writeMicroseconds(1500 - speedLeft);   // Set left servo speed
   servoRight.writeMicroseconds(1500 + speedRight); // Set right servo speed
